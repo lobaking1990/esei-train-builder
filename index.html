@@ -1,0 +1,4117 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ekspres Kembara Menulis</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg1:#0f172a; --bg2:#111827; --panel:#1f2937; --line:#64748b;
+  --text:#f8fafc; --muted:#cbd5e1; --gold:#fbbf24; --danger:#ef4444;
+  --good:#22c55e; --blue:#38bdf8; --dark:#0b1220;
+}
+body{
+  margin:0; color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+  background:
+    radial-gradient(circle at 15% 8%, #2563eb33 0 14%, transparent 18%),
+    radial-gradient(circle at 85% 12%, #7c3aed30 0 12%, transparent 17%),
+    linear-gradient(var(--bg1), var(--bg2));
+  min-height:100vh;
+}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.screen{display:none; min-height:100vh; padding:18px}
+.screen.active{display:block}
+.shell{max-width:1200px; margin:auto}
+.card{
+  background:linear-gradient(180deg, rgba(31,41,55,.96), rgba(15,23,42,.97));
+  border:2px solid var(--line); border-radius:24px;
+  box-shadow:0 18px 60px rgba(0,0,0,.35);
+  padding:20px;
+}
+.game-title-banner{
+  display:block; width:min(960px,92%); margin:8px auto 10px;
+  filter:drop-shadow(0 8px 12px rgba(0,0,0,.35));
+}
+.sub{text-align:center;color:#dbeafe;font-size:clamp(16px,2vw,24px);font-weight:800;margin:6px 0 20px}
+.hero-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:760px;margin:14px auto}
+.hero{
+  border:3px solid transparent;background:#243145;color:white;border-radius:18px;padding:14px;text-align:center;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.hero:hover{transform:translateY(-2px)}
+.hero.selected{border-color:var(--gold);box-shadow:0 0 22px #fbbf2466}
+.avatar-wrap{
+  background:radial-gradient(circle at 50% 42%,#334155 0,#1e293b 58%,#0f172a 100%);
+  min-height:260px; display:grid; place-items:center; overflow:hidden;
+  border-radius:18px; border:2px solid #94a3b8; margin-bottom:10px;
+}
+.avatar-wrap img{max-width:220px;height:230px;object-fit:contain;filter:drop-shadow(0 10px 8px #0006)}
+.label-title{font-size:20px;font-weight:900}
+.label-sub{font-size:13px;color:#cbd5e1;margin-top:4px}
+.namebox{max-width:640px;margin:14px auto;display:none}
+.namebox input{
+  width:100%;padding:14px 16px;border-radius:14px;border:2px solid var(--line);
+  background:#0f172a;color:white
+}
+.mainbtn{
+  display:block;margin:18px auto 0;padding:14px 28px;border:0;border-radius:16px;
+  background:linear-gradient(#fbbf24,#f59e0b); color:#231900;
+  font-weight:900;font-size:20px; box-shadow:0 5px 0 #92400e;
+}
+.mainbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #92400e}
+#startBtn{display:none}
+.revealed{animation:revealName .28s ease both}
+@keyframes revealName{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+.hud{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.hudbox{background:#0f172acc;border:1px solid #475569;border-radius:14px;padding:10px 12px;min-height:58px}
+.label{font-size:12px;color:#94a3b8;text-transform:uppercase;font-weight:800;letter-spacing:.05em}
+.value{font-weight:900;font-size:18px;margin-top:3px}
+.bar{height:12px;background:#334155;border-radius:20px;overflow:hidden;margin-top:7px}
+.bar > div{height:100%;background:linear-gradient(90deg,#38bdf8,#22c55e);width:0%;transition:.4s}
+
+.journey-strip{
+  position:relative; height:220px; margin:8px 0 12px; overflow:hidden;
+  border-radius:20px; border:2px solid #475569;
+  background:
+    linear-gradient(180deg,#8ed8ff 0 50%,#d9f99d 50% 70%,#4d7c0f 70% 100%);
+}
+.journey-strip:before{
+  content:""; position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 18% 24%,#fff9 0 2%,transparent 2.5%),
+    radial-gradient(circle at 30% 18%,#fff7 0 2.5%,transparent 3%),
+    radial-gradient(circle at 68% 28%,#fff7 0 2%,transparent 2.5%);
+  pointer-events:none;
+}
+.journey-label{
+  position:absolute; left:14px; top:10px; z-index:5;
+  padding:6px 10px; border-radius:999px; background:#0f172acc;
+  border:1px solid #94a3b8; font-weight:900; font-size:13px;
+}
+.rail-row{
+  position:absolute; left:0; right:0; bottom:-26px; height:145px; display:block;
+  z-index:2; overflow:hidden;
+  background-image:url("assets/img_01_825576993caa.png");
+  background-repeat:repeat-x; background-size:520px auto; background-position:left center;
+  filter:drop-shadow(0 5px 3px rgba(0,0,0,.30));
+}
+.side-train-progress{
+  position:absolute; left:1.5%; bottom:57px; width:34%; max-width:400px; min-width:215px;
+  z-index:4; object-fit:contain;
+  transition:left .8s cubic-bezier(.2,.8,.2,1);
+  filter:drop-shadow(0 9px 6px rgba(0,0,0,.45));
+}
+.station-art{
+  position:absolute; right:12px; bottom:65px; width:300px; height:auto;
+  z-index:3; object-fit:contain;
+  filter:drop-shadow(0 9px 7px rgba(0,0,0,.38));
+}
+
+.map{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;margin:12px 0 18px}
+.node{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#334155;border:2px solid #64748b;font-weight:900}
+.node.done{background:#166534;border-color:#4ade80}
+.node.now{background:#92400e;border-color:#fbbf24;box-shadow:0 0 16px #fbbf24aa}
+.railmini{width:44px;height:4px;background:#64748b;border-radius:10px}
+
+.gamegrid{display:grid;grid-template-columns:minmax(320px,46%) 1fr;gap:18px}
+.picture{background:white;border-radius:18px;padding:8px;border:3px solid #94a3b8}
+.picture img{width:100%;display:block;border-radius:10px}
+.quest{min-height:530px;display:flex;flex-direction:column}
+.station-title{font-size:26px;font-weight:900;margin:0 0 4px;color:#fef3c7}
+.quest-type{color:#93c5fd;font-weight:800;margin-bottom:12px}
+.instruction{background:#172554;border-left:5px solid #38bdf8;padding:12px 14px;border-radius:12px;margin:8px 0 14px}
+.sentence{font-size:22px;line-height:1.55;background:#0f172a;border:2px dashed #64748b;border-radius:15px;padding:14px;margin:8px 0 14px}
+.blank{display:inline-block;min-width:100px;padding:2px 8px;border-bottom:3px solid #fbbf24;color:#fef3c7;text-align:center}
+.choices{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 12px}
+.choice{border:2px solid #64748b;background:#334155;color:white;border-radius:14px;padding:12px 15px;font-weight:800}
+.choice:hover{border-color:#93c5fd;transform:translateY(-1px)}
+.choice.correct{border-color:#4ade80;background:#14532d}
+.choice.wrong{border-color:#f87171;background:#7f1d1d}
+.feedback{min-height:40px;margin-top:8px;font-weight:800;font-size:18px}
+.good{color:#86efac} .bad{color:#fca5a5}
+.answer-art{display:none;max-width:320px;width:min(92%,320px);margin:8px auto 0;filter:drop-shadow(0 10px 12px rgba(0,0,0,.25))}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:12px}
+.action{padding:12px 18px;border-radius:13px;border:0;font-weight:900}
+.attack{background:#ef4444;color:white}
+.hint{background:#0ea5e9;color:#04111c}
+.reward{background:linear-gradient(135deg,#713f12,#422006);border:2px solid #fbbf24;border-radius:14px;padding:12px;margin-top:10px}
+
+.order-box{display:grid;gap:12px;margin:10px 0}
+.order-row{
+  display:grid;grid-template-columns:86px 1fr;gap:12px;align-items:center;
+  background:#0f172a;border:2px solid #475569;border-radius:16px;padding:12px;
+}
+.order-row select{
+  width:100%;padding:10px;border-radius:12px;border:2px solid #64748b;background:#1f2937;color:white;font-weight:900
+}
+.order-sentence{font-size:18px;line-height:1.45}
+.result{text-align:center;max-width:820px;margin:auto}
+.result-station{width:min(620px,88%);display:block;margin:0 auto -2px;filter:drop-shadow(0 12px 9px rgba(0,0,0,.42))}
+.trophy{font-size:90px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+.stat{background:#0f172a;border:1px solid #475569;border-radius:14px;padding:14px}
+.music-btn{
+  position:fixed; right:16px; bottom:16px; z-index:999;
+  border:0; border-radius:999px; padding:12px 16px; font-weight:900;
+  background:linear-gradient(#fbbf24,#f59e0b); color:#231900;
+  box-shadow:0 4px 0 #92400e, 0 10px 22px #0005;
+}
+.music-btn:active{transform:translateY(2px); box-shadow:0 2px 0 #92400e, 0 8px 16px #0005}
+.tiny{font-size:13px;color:#94a3b8}
+@media(max-width:850px){
+  .hero-row{grid-template-columns:1fr}
+  .hud{grid-template-columns:1fr 1fr}
+  .gamegrid{grid-template-columns:1fr}
+  .quest{min-height:0}
+  .journey-strip{height:170px}
+  .rail-row{height:110px;bottom:-24px;background-size:390px auto}
+  .station-art{width:150px;right:4px;bottom:49px}
+  .side-train-progress{width:43%;min-width:160px;max-width:245px;bottom:46px}
+  .avatar-wrap{min-height:215px}
+  .avatar-wrap img{height:195px}
+  .order-row{grid-template-columns:72px 1fr}
+}
+
+/* Progressive multi-blank sentence builder */
+.builder-question{
+  background:#0f172a;
+  border:2px dashed #64748b;
+  border-radius:16px;
+  padding:14px;
+  margin:8px 0 14px;
+}
+.builder-prefix,.builder-suffix{
+  font-size:20px;
+  line-height:1.45;
+  font-weight:800;
+}
+.slot-row{
+  display:flex;
+  gap:10px;
+  align-items:stretch;
+  flex-wrap:nowrap;
+  margin:12px 0;
+  width:100%;
+}
+.answer-slot{
+  flex:1 1 0;
+  min-width:0;
+  min-height:70px;
+  border:3px dashed #fbbf24;
+  border-radius:14px;
+  background:#1e293b;
+  color:#f8fafc;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:9px;
+  font-weight:900;
+  line-height:1.25;
+  cursor:pointer;
+  transition:.18s ease;
+}
+.answer-slot.empty::before{
+  content:"?";
+  color:#fbbf24;
+  font-size:28px;
+}
+.answer-slot.filled{
+  border-style:solid;
+  border-color:#60a5fa;
+  background:#172554;
+}
+.answer-slot:hover{
+  transform:translateY(-1px);
+  border-color:#fde68a;
+}
+.choice.used{
+  opacity:.38;
+  pointer-events:none;
+  transform:none !important;
+}
+.check-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.check-row .action{
+  flex:1 1 180px;
+}
+@media(max-width:720px){
+  .slot-row{
+    flex-wrap:wrap;
+  }
+  .answer-slot{
+    flex:1 1 calc(50% - 8px);
+    min-height:62px;
+  }
+}
+
+
+/* ===== One-page classroom layout ===== */
+#game.screen{
+  height:100vh;
+  min-height:100vh;
+  padding:8px !important;
+  overflow:hidden;
+}
+.onepage-shell{max-width:1500px !important;height:100%;}
+.layout-onepage{
+  display:grid;
+  grid-template-columns:205px minmax(0,1fr);
+  gap:9px;
+  height:100%;
+}
+.side-panel{
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+.side-card{
+  background:#0f172acc;
+  border:1px solid #475569;
+  border-radius:14px;
+  padding:9px 10px;
+}
+.player-card .value{min-height:34px;display:flex;align-items:center}
+.reward-card .value{font-size:22px;word-break:break-word}
+.station-card{flex:1;min-height:205px;overflow:hidden}
+.side-btn{
+  border:0;border-radius:14px;padding:11px 10px;
+  font-weight:900;background:linear-gradient(#fde68a,#fbbf24);color:#3b2500;
+  box-shadow:0 4px 0 #92400e;
+}
+.main-stage{
+  min-width:0;min-height:0;
+  display:grid;
+  grid-template-rows:110px minmax(0,1fr);
+  gap:8px;
+}
+.compact-journey{
+  height:110px !important;
+  min-height:110px !important;
+  margin:0 !important;
+  overflow:hidden !important;
+}
+.rail-row.new-rail{
+  position:absolute !important;
+  left:0 !important;right:0 !important;
+  bottom:-2px !important;
+  height:67px !important;
+  z-index:2 !important;
+  background-image:url("assets/img_02_78b370deb4b0.png") !important;
+  background-repeat:repeat-x !important;
+  background-size:auto 67px !important;
+  background-position:left bottom !important;
+  filter:drop-shadow(0 4px 3px rgba(0,0,0,.3));
+}
+.compact-journey .side-train-progress{
+  bottom:35px !important;
+  width:27% !important;
+  max-width:320px !important;
+  min-width:175px !important;
+  z-index:4 !important;
+}
+.compact-journey .station-art{
+  width:158px !important;
+  right:2px !important;
+  bottom:38px !important;
+  max-height:72px !important;
+  object-fit:contain !important;
+}
+.onepage-gamegrid{
+  min-height:0;height:100%;
+  display:grid !important;
+  grid-template-columns:minmax(300px,39%) minmax(0,1fr) !important;
+  gap:8px !important;
+}
+.onepage-picture,.onepage-quest{
+  min-height:0 !important;height:100%;
+  padding:10px !important;
+  overflow:auto;
+}
+.onepage-picture{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  background:white;
+}
+.onepage-picture img{
+  max-height:calc(100vh - 160px);
+  width:100%;
+  height:auto;
+  object-fit:contain;
+}
+.picture-hint{color:#475569 !important;text-align:center;margin-top:4px !important}
+.onepage-quest .station-title{font-size:21px !important;margin-bottom:2px !important}
+.onepage-quest .quest-type{font-size:13px !important;margin-bottom:5px !important}
+.onepage-quest .instruction{padding:8px 10px !important;margin:4px 0 7px !important;font-size:14px}
+.onepage-quest .builder-question{padding:8px !important;margin:4px 0 7px !important}
+.onepage-quest .slot-row{margin:6px 0 !important;gap:6px !important}
+.onepage-quest .answer-slot{min-height:52px !important;padding:6px !important;font-size:13px !important}
+.onepage-quest .choices{gap:6px !important;margin:5px 0 !important}
+.onepage-quest .choice{padding:8px 10px !important;font-size:13px !important}
+.onepage-quest .feedback{min-height:24px !important;font-size:14px !important;margin-top:4px !important}
+.onepage-quest .answer-art{max-height:112px !important;width:auto !important;margin:3px auto 0 !important}
+.onepage-quest .check-row{margin-top:4px !important}
+.onepage-quest .action{padding:9px 12px !important}
+.vertical-map{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:2px !important;
+  margin:6px 0 0 !important;
+}
+.vertical-map .node{width:29px !important;height:29px !important;font-size:12px !important}
+.vertical-map .railmini{width:4px !important;height:11px !important}
+.stats{grid-template-columns:repeat(2,1fr) !important}
+
+/* ===== Teacher mode ===== */
+.teacher-start-btn{
+  position:fixed;top:12px;right:12px;z-index:1500;
+  border:0;border-radius:999px;padding:9px 14px;font-weight:900;
+  background:#fbbf24;color:#3b2500;box-shadow:0 4px 0 #92400e;
+}
+.teacher-modal{
+  display:none;position:fixed;inset:0;z-index:4000;
+  background:rgba(2,6,23,.84);padding:16px;
+  align-items:center;justify-content:center;
+}
+.teacher-modal.open{display:flex}
+.teacher-dialog{
+  position:relative;width:min(900px,96vw);max-height:92vh;overflow:auto;
+  background:#f8fafc;color:#0f172a;border-radius:22px;
+  border:3px solid #fbbf24;padding:18px;box-shadow:0 24px 80px #0008;
+}
+.teacher-close{
+  position:absolute;right:10px;top:10px;width:36px;height:36px;
+  border:0;border-radius:50%;background:#e2e8f0;font-weight:900;
+}
+.teacher-title{font-size:27px;font-weight:1000;margin-bottom:12px}
+.teacher-row,.teacher-actions{display:flex;gap:9px;flex-wrap:wrap}
+.teacher-dialog input,.teacher-dialog textarea{
+  width:100%;padding:9px 11px;border:2px solid #cbd5e1;
+  border-radius:11px;background:white;color:#0f172a;
+}
+.teacher-dialog textarea{min-height:58px;resize:vertical}
+.teacher-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.teacher-label{display:block;font-weight:900;margin:7px 0 4px}
+.teacher-sentences{display:grid;gap:6px}
+.teacher-note{margin:10px 0;padding:9px;border-radius:11px;background:#e0f2fe;border-left:5px solid #0284c7;font-size:14px}
+.teacher-action{border:0;border-radius:11px;padding:9px 14px;font-weight:900;background:#334155;color:white}
+.teacher-action.primary{background:#16a34a}
+.teacher-action.danger{background:#dc2626}
+.teacher-status{margin-top:7px;font-size:13px;font-weight:800}
+.teacher-muted{color:#64748b !important}
+
+@media(max-width:980px){
+  #game.screen{height:auto;min-height:100vh;overflow:auto}
+  .layout-onepage{grid-template-columns:1fr;height:auto}
+  .side-panel{display:grid;grid-template-columns:repeat(5,1fr)}
+  .station-card{display:none}
+  .side-btn{margin:0}
+  .main-stage{grid-template-rows:105px auto}
+  .onepage-gamegrid{grid-template-columns:1fr !important;height:auto}
+  .onepage-picture,.onepage-quest{height:auto}
+}
+@media(max-width:650px){
+  .side-panel{grid-template-columns:1fr 1fr}
+  .teacher-grid{grid-template-columns:1fr}
+  .slot-row{flex-wrap:wrap !important}
+  .answer-slot{flex:1 1 calc(50% - 6px) !important}
+}
+
+
+/* No-equipment + inline word blanks */
+.inline-sentence{
+  font-size:18px;
+  line-height:1.85;
+  background:#0f172a;
+  border:2px dashed #64748b;
+  border-radius:16px;
+  padding:10px;
+  margin:4px 0 8px;
+}
+.inline-sentence .inline-blank{
+  display:inline-flex !important;
+  vertical-align:middle;
+  min-width:84px !important;
+  min-height:42px !important;
+  margin:0 3px;
+  padding:4px 8px !important;
+  border-width:3px !important;
+  font-size:13px !important;
+}
+.check-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:6px;
+}
+.check-row .action{flex:1 1 150px}
+.next-btn{
+  background:#22c55e !important;
+  color:#fff !important;
+}
+.onepage-quest .feedback{min-height:24px !important}
+
+
+/* ===== Bilingual support ===== */
+.cn-help{
+  color:#bfdbfe;
+  font-size:.82em;
+  font-weight:700;
+}
+.cn-inline{
+  color:#93c5fd;
+  font-size:.78em;
+  font-weight:800;
+  text-transform:none;
+  letter-spacing:0;
+}
+.instruction .cn-help{
+  display:block;
+  margin-top:3px;
+  color:#bfdbfe;
+}
+
+
+/* ===== Advanced Guru Mode ===== */
+.teacher-select{
+  width:100%;
+  padding:9px 11px;
+  border:2px solid #cbd5e1;
+  border-radius:11px;
+  background:white;
+  color:#0f172a;
+  font-weight:800;
+}
+.teacher-grid-top{
+  align-items:end;
+  margin-bottom:8px;
+}
+.teacher-library-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  align-items:end;
+}
+.sentence-editor-row{
+  padding:10px;
+  border:1px solid #cbd5e1;
+  border-radius:14px;
+  background:#f8fafc;
+}
+.sentence-tools{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-top:6px;
+}
+.blank-target{
+  font-size:12px;
+  font-weight:900;
+  color:#475569;
+}
+.token-pool{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:7px;
+  min-height:34px;
+}
+.word-token{
+  border:2px solid #94a3b8;
+  background:white;
+  color:#0f172a;
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:13px;
+  font-weight:800;
+  cursor:pointer;
+}
+.word-token.selected{
+  border-color:#16a34a;
+  background:#dcfce7;
+  color:#14532d;
+}
+.word-token.locked{
+  opacity:.45;
+}
+
+
+/* ===== Hall of Fame ===== */
+.top-tools{
+  position:fixed;
+  top:12px;
+  right:12px;
+  z-index:1500;
+  display:flex;
+  gap:8px;
+}
+.top-tools .teacher-start-btn{
+  position:static !important;
+}
+.hall-start-btn{
+  border:0;border-radius:999px;padding:9px 14px;font-weight:900;
+  background:linear-gradient(#60a5fa,#2563eb);color:white;
+  box-shadow:0 4px 0 #1e3a8a;
+}
+.hall-side-btn{
+  background:linear-gradient(#60a5fa,#2563eb) !important;
+  color:white !important;
+  box-shadow:0 4px 0 #1e3a8a !important;
+}
+.result-actions{
+  display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
+}
+.result-actions .mainbtn{margin:18px 0 0}
+.result-hall-btn{
+  background:linear-gradient(#60a5fa,#2563eb) !important;
+  color:white !important;
+  box-shadow:0 5px 0 #1e3a8a !important;
+}
+.hall-modal{
+  display:none;position:fixed;inset:0;z-index:5000;
+  background:rgba(2,6,23,.88);padding:14px;
+  align-items:center;justify-content:center;
+}
+.hall-modal.open{display:flex}
+.hall-dialog{
+  position:relative;width:min(1320px,98vw);height:min(900px,95vh);
+  overflow:auto;border-radius:26px;padding:18px;
+  background:
+    radial-gradient(circle at 15% 8%,rgba(56,189,248,.26),transparent 22%),
+    radial-gradient(circle at 86% 8%,rgba(250,204,21,.24),transparent 20%),
+    linear-gradient(180deg,#0f3b64,#0f172a 42%,#111827);
+  border:3px solid #fbbf24;box-shadow:0 30px 100px #000a;color:white;
+}
+.hall-close{
+  position:absolute;right:12px;top:10px;width:38px;height:38px;
+  border:0;border-radius:50%;background:#fff;color:#0f172a;font-weight:1000;z-index:4;
+}
+.hall-title{
+  text-align:center;font-size:clamp(34px,5vw,62px);font-weight:1000;
+  color:#fbbf24;text-shadow:0 4px 0 #92400e,0 7px 20px #000;
+  letter-spacing:.02em;
+}
+.hall-subtitle{text-align:center;color:#dbeafe;font-weight:900;margin-bottom:12px}
+.hall-empty{
+  max-width:520px;margin:100px auto;text-align:center;font-size:22px;
+  padding:30px;border:2px dashed #64748b;border-radius:20px;background:#0f172acc;
+}
+.podium{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;max-width:920px;margin:0 auto 16px;align-items:end;
+}
+.podium-card{
+  text-align:center;border-radius:22px;padding:10px;
+  background:linear-gradient(180deg,#1e3a8a,#0f172a);
+  border:2px solid #60a5fa;box-shadow:0 12px 25px #0006;
+}
+.podium-card.rank1{
+  order:2;transform:translateY(-8px);border-color:#fbbf24;
+  background:linear-gradient(180deg,#713f12,#0f172a);
+}
+.podium-card.rank2{order:1}
+.podium-card.rank3{order:3}
+.podium-badge{width:min(150px,80%);height:125px;object-fit:contain;display:block;margin:auto}
+.podium-name{font-size:20px;font-weight:1000;margin-top:2px}
+.podium-score{font-size:14px;color:#bfdbfe;font-weight:800}
+.hall-grid{
+  display:grid;grid-template-columns:minmax(500px,1.15fr) minmax(420px,.85fr);
+  gap:14px;
+}
+.ranking-panel,.badge-panel{
+  background:#0f172ae8;border:2px solid #475569;border-radius:20px;padding:12px;
+}
+.hall-section-title{font-size:22px;font-weight:1000;color:#fef3c7;margin-bottom:6px}
+.ranking-help,.badge-summary{font-size:13px;color:#cbd5e1;margin-bottom:8px}
+.ranking-table-wrap{overflow:auto;max-height:430px;border-radius:12px}
+.ranking-table{width:100%;border-collapse:collapse;font-size:14px}
+.ranking-table th{
+  position:sticky;top:0;background:#1e293b;color:#bfdbfe;padding:9px 7px;text-align:left;z-index:2;
+}
+.ranking-table td{padding:8px 7px;border-top:1px solid #334155;vertical-align:middle}
+.ranking-row{cursor:pointer;transition:.15s}
+.ranking-row:hover,.ranking-row.active{background:#1e3a5f}
+.rank-mini-badge{width:48px;height:48px;object-fit:contain;vertical-align:middle}
+.badge-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;
+  max-height:510px;overflow:auto;padding-right:3px;
+}
+.badge-item{
+  position:relative;min-height:128px;border-radius:14px;padding:7px;text-align:center;
+  background:#1e293b;border:1px solid #475569;
+}
+.badge-item img{width:100%;height:86px;object-fit:contain;display:block}
+.badge-item.locked img{filter:grayscale(1);opacity:.20}
+.badge-item.locked{opacity:.65}
+.badge-name{font-size:11px;font-weight:900;line-height:1.15;margin-top:3px}
+.badge-lock{
+  position:absolute;right:5px;top:5px;width:24px;height:24px;border-radius:50%;
+  display:grid;place-items:center;background:#020617cc;font-size:12px
+}
+.badge-item.earned{border-color:#fbbf24;box-shadow:0 0 12px #fbbf2430}
+.badge-new{
+  animation:badgePulse 1s ease-in-out 2;
+}
+@keyframes badgePulse{
+  50%{transform:scale(1.05);box-shadow:0 0 24px #fbbf2499}
+}
+.score-pop{
+  display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;
+  background:#14532d;border:1px solid #4ade80;font-weight:900;margin-top:4px
+}
+@media(max-width:980px){
+  .hall-grid{grid-template-columns:1fr}
+  .badge-grid{grid-template-columns:repeat(5,minmax(0,1fr));max-height:none}
+  .ranking-table-wrap{max-height:360px}
+}
+@media(max-width:650px){
+  .podium{grid-template-columns:1fr}
+  .podium-card.rank1,.podium-card.rank2,.podium-card.rank3{order:initial;transform:none}
+  .hall-grid{display:block}
+  .badge-panel{margin-top:10px}
+  .badge-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .hall-dialog{padding:12px}
+  .hall-title{font-size:34px}
+  .top-tools{top:8px;right:8px}
+}
+
+
+.hall-title-image{
+  display:block;
+  width:min(760px,88%);
+  max-height:180px;
+  object-fit:contain;
+  margin:0 auto 4px;
+  filter:drop-shadow(0 8px 12px rgba(0,0,0,.38));
+}
+@media(max-width:650px){
+  .hall-title-image{
+    width:92%;
+    max-height:120px;
+  }
+}
+
+
+/* ===== Ending screen hero artwork ===== */
+.ending-hero-image{
+  display:block;
+  width:min(760px,92%);
+  max-height:500px;
+  object-fit:contain;
+  margin:0 auto 8px;
+  filter:drop-shadow(0 14px 18px rgba(0,0,0,.38));
+}
+#result .result{
+  max-width:900px !important;
+}
+#result .stats{
+  margin-top:10px !important;
+}
+@media(max-width:650px){
+  .ending-hero-image{
+    width:96%;
+    max-height:360px;
+  }
+}
+
+
+/* ===== Image buttons ===== */
+.image-action-btn,
+.hall-start-btn,
+.hall-side-btn,
+.result-hall-btn{
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  overflow:visible !important;
+}
+.image-action-btn img,
+.hall-start-btn img,
+.hall-side-btn img,
+.result-hall-btn img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  filter:drop-shadow(0 7px 7px rgba(0,0,0,.35));
+  transition:transform .16s ease, filter .16s ease;
+}
+.image-action-btn:hover img,
+.hall-start-btn:hover img,
+.hall-side-btn:hover img,
+.result-hall-btn:hover img{
+  transform:scale(1.04);
+  filter:drop-shadow(0 10px 10px rgba(0,0,0,.45));
+}
+.start-image-btn{
+  width:170px !important;
+  height:170px !important;
+  margin:10px auto 0 !important;
+}
+.replay-image-btn{
+  width:150px !important;
+  height:150px !important;
+  margin:8px auto 0 !important;
+}
+.hall-start-btn{
+  width:74px !important;
+  height:74px !important;
+}
+.hall-side-btn{
+  width:100% !important;
+  height:86px !important;
+}
+.result-hall-btn{
+  width:150px !important;
+  height:150px !important;
+  margin:8px 0 0 !important;
+}
+.result-actions{
+  align-items:center;
+}
+@media(max-width:650px){
+  .start-image-btn{width:135px !important;height:135px !important}
+  .replay-image-btn,.result-hall-btn{width:120px !important;height:120px !important}
+  .hall-start-btn{width:62px !important;height:62px !important}
+}
+
+
+/* ===== Question Set Selection ===== */
+#questionSelect.screen{
+  min-height:100vh;
+  padding:18px;
+  overflow:auto;
+}
+.select-shell{
+  max-width:1180px;
+}
+.select-topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:8px;
+}
+.select-player{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 12px;
+  border-radius:14px;
+  background:#0f172acc;
+  border:1px solid #475569;
+  font-weight:900;
+}
+.select-player img{
+  width:44px;
+  height:44px;
+  object-fit:contain;
+}
+.select-hall-btn{
+  width:82px;
+  height:82px;
+  border:0;
+  background:transparent;
+  background-image:url("assets/img_03_05f1be4ad6f9.png");
+  background-size:contain;
+  background-repeat:no-repeat;
+  background-position:center;
+  filter:drop-shadow(0 6px 7px rgba(0,0,0,.35));
+}
+.select-heading{
+  text-align:center;
+  font-size:clamp(34px,5vw,58px);
+  font-weight:1000;
+  color:#fbbf24;
+  text-shadow:0 4px 0 #92400e,0 7px 18px rgba(0,0,0,.45);
+  margin-top:2px;
+}
+.select-subheading{
+  text-align:center;
+  color:#bfdbfe;
+  font-weight:900;
+  font-size:18px;
+  margin-bottom:18px;
+}
+.question-set-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:16px;
+}
+.question-set-card{
+  border:2px solid #64748b;
+  background:linear-gradient(180deg,#1f2937,#0f172a);
+  color:white;
+  border-radius:22px;
+  overflow:hidden;
+  padding:0;
+  text-align:left;
+  box-shadow:0 16px 35px rgba(0,0,0,.28);
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.question-set-card:hover{
+  transform:translateY(-3px);
+  border-color:#fbbf24;
+  box-shadow:0 20px 45px rgba(0,0,0,.38);
+}
+.question-set-thumb{
+  width:100%;
+  height:190px;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.question-set-thumb img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.question-set-body{
+  padding:14px;
+}
+.question-set-title{
+  font-size:20px;
+  font-weight:1000;
+  color:#fef3c7;
+}
+.question-set-meta{
+  margin-top:5px;
+  font-size:13px;
+  color:#cbd5e1;
+}
+.question-set-play{
+  margin-top:10px;
+  display:inline-block;
+  padding:8px 12px;
+  border-radius:999px;
+  background:#16a34a;
+  color:white;
+  font-weight:900;
+}
+.select-note{
+  text-align:center;
+  margin-top:18px;
+  color:#cbd5e1;
+  font-size:13px;
+}
+@media(max-width:650px){
+  .select-hall-btn{width:68px;height:68px}
+  .question-set-grid{grid-template-columns:1fr}
+  .question-set-thumb{height:170px}
+}
+
+
+/* ===== Finish page button placement ===== */
+#result .result{
+  display:flex;
+  flex-direction:column;
+  min-height:calc(100vh - 40px);
+}
+
+#result .result-actions{
+  margin-top:auto !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  gap:22px !important;
+  width:100% !important;
+  padding-top:14px !important;
+  padding-bottom:6px !important;
+}
+
+#result .result-actions .mainbtn,
+#result .result-actions .image-action-btn,
+#result .result-actions .result-hall-btn{
+  margin:0 !important;
+}
+
+#result .result-hall-btn,
+#result .replay-image-btn{
+  width:145px !important;
+  height:145px !important;
+  flex:0 0 145px !important;
+}
+
+@media(max-width:650px){
+  #result .result-actions{
+    gap:14px !important;
+  }
+  #result .result-hall-btn,
+  #result .replay-image-btn{
+    width:112px !important;
+    height:112px !important;
+    flex-basis:112px !important;
+  }
+}
+
+
+/* ===== Developer/Guru Mode image buttons ===== */
+#teacherOpenStart,
+#teacherOpen{
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  overflow:visible !important;
+}
+#teacherOpenStart{
+  width:76px !important;
+  height:76px !important;
+}
+#teacherOpen{
+  width:100% !important;
+  height:88px !important;
+}
+.developer-btn-art{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+  filter:drop-shadow(0 7px 7px rgba(0,0,0,.35));
+  transition:transform .16s ease,filter .16s ease;
+}
+#teacherOpenStart:hover .developer-btn-art,
+#teacherOpen:hover .developer-btn-art{
+  transform:scale(1.04);
+  filter:drop-shadow(0 10px 10px rgba(0,0,0,.45));
+}
+@media(max-width:650px){
+  #teacherOpenStart{width:64px !important;height:64px !important}
+  #teacherOpen{height:76px !important}
+}
+
+
+/* =========================================================
+   FINAL RESPONSIVE POLISH — ONE SCREEN DESKTOP + PHONE
+   ========================================================= */
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+}
+body{
+  min-height:100dvh !important;
+}
+.screen{
+  height:100dvh !important;
+  min-height:0 !important;
+  padding:clamp(6px,1.2vh,12px) !important;
+  overflow:hidden !important;
+}
+.shell{
+  height:100%;
+  min-height:0;
+}
+
+/* ---------- START SCREEN ---------- */
+#start .shell{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  max-width:980px;
+}
+#start .game-title-banner{
+  width:min(700px,72vw) !important;
+  max-height:19dvh !important;
+  object-fit:contain;
+  margin:0 auto 4px !important;
+}
+#start .card{
+  width:min(900px,96%);
+  max-height:76dvh;
+  margin:0 auto;
+  padding:clamp(9px,1.4vh,14px) !important;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+#start .hero-row{
+  width:min(690px,96%);
+  max-width:none !important;
+  margin:5px auto !important;
+  gap:10px !important;
+}
+#start .hero{
+  padding:8px !important;
+}
+#start .avatar-wrap{
+  min-height:0 !important;
+  height:clamp(150px,25dvh,215px) !important;
+  margin-bottom:5px !important;
+}
+#start .avatar-wrap img{
+  height:92% !important;
+  max-width:92% !important;
+}
+#start .label-title{font-size:16px !important}
+#start .label-sub{font-size:11px !important}
+#start .namebox{
+  width:min(560px,94%);
+  max-width:none !important;
+  margin:5px auto !important;
+}
+#start .namebox input{
+  padding:10px 13px !important;
+  min-height:42px;
+}
+#start .start-image-btn{
+  width:clamp(92px,12dvh,125px) !important;
+  height:clamp(92px,12dvh,125px) !important;
+  margin:3px auto 0 !important;
+}
+.top-tools{
+  top:8px !important;
+  right:8px !important;
+  gap:6px !important;
+}
+.top-tools #hallOpenStart,
+.top-tools #teacherOpenStart{
+  width:60px !important;
+  height:60px !important;
+}
+
+/* ---------- QUESTION / SET SELECTION ---------- */
+#questionSelect .select-shell{
+  display:grid;
+  grid-template-rows:auto auto auto minmax(0,1fr) auto;
+  height:100%;
+  max-width:1180px;
+  gap:3px;
+}
+.select-topbar{margin:0 !important}
+.select-player{padding:5px 9px !important}
+.select-player img{width:34px !important;height:34px !important}
+.select-hall-btn{width:58px !important;height:58px !important}
+.select-heading{
+  font-size:clamp(27px,4.2vh,44px) !important;
+  line-height:1 !important;
+  margin:0 !important;
+}
+.select-subheading{
+  margin:0 0 4px !important;
+  font-size:14px !important;
+}
+.question-set-grid{
+  min-height:0;
+  overflow:auto;
+  align-content:start;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr)) !important;
+  gap:10px !important;
+  padding:2px 4px 4px;
+}
+.question-set-card{border-radius:16px !important}
+.question-set-thumb{height:clamp(120px,22dvh,180px) !important}
+.question-set-body{padding:9px 11px !important}
+.question-set-title{font-size:17px !important}
+.question-set-meta{font-size:11px !important}
+.question-set-play{margin-top:6px !important;padding:6px 10px !important;font-size:12px}
+.select-note{
+  margin:2px 0 0 !important;
+  font-size:11px !important;
+}
+
+/* ---------- GAME SCREEN ---------- */
+#game.screen{
+  height:100dvh !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+#game .onepage-shell{height:100% !important}
+#game .layout-onepage{
+  height:100% !important;
+  min-height:0 !important;
+  grid-template-columns:180px minmax(0,1fr) !important;
+  gap:7px !important;
+}
+#game .side-panel{
+  min-height:0 !important;
+  gap:5px !important;
+}
+#game .side-card{padding:7px 8px !important}
+#game .player-card .value{min-height:27px !important}
+#game .side-card .value{font-size:15px !important}
+#game .bar{height:8px !important;margin-top:4px !important}
+#game .station-card{min-height:160px !important}
+#game .vertical-map .node{width:25px !important;height:25px !important}
+#game .vertical-map .railmini{height:8px !important}
+#game #hallOpen,
+#game #homeOpen,
+#game #teacherOpen{
+  height:67px !important;
+}
+#game .main-stage{
+  height:100% !important;
+  min-height:0 !important;
+  grid-template-rows:88px minmax(0,1fr) !important;
+  gap:6px !important;
+}
+#game .compact-journey{
+  height:88px !important;
+  min-height:88px !important;
+}
+#game .rail-row.new-rail{
+  height:52px !important;
+  background-size:auto 52px !important;
+}
+#game .compact-journey .side-train-progress{
+  bottom:26px !important;
+  width:24% !important;
+  max-width:270px !important;
+  min-width:145px !important;
+}
+#game .compact-journey .station-art{
+  width:130px !important;
+  max-height:58px !important;
+  bottom:29px !important;
+}
+#game .journey-label{
+  top:5px !important;
+  left:7px !important;
+  padding:4px 7px !important;
+  font-size:11px !important;
+}
+#game .onepage-gamegrid{
+  height:100% !important;
+  min-height:0 !important;
+  grid-template-columns:minmax(250px,36%) minmax(0,1fr) !important;
+  gap:6px !important;
+}
+#game .onepage-picture,
+#game .onepage-quest{
+  min-height:0 !important;
+  height:100% !important;
+  overflow:auto !important;
+  padding:8px !important;
+}
+#game .onepage-picture{
+  justify-content:center !important;
+}
+#game .onepage-picture img{
+  width:100% !important;
+  height:calc(100% - 24px) !important;
+  max-height:none !important;
+  object-fit:contain !important;
+}
+#game .picture-hint{
+  font-size:10px !important;
+  line-height:1.15;
+}
+#game .onepage-quest .station-title{font-size:18px !important}
+#game .onepage-quest .quest-type{font-size:11px !important}
+#game .onepage-quest .instruction{
+  font-size:12px !important;
+  padding:6px 8px !important;
+  margin:3px 0 5px !important;
+}
+#game .onepage-quest .inline-sentence{
+  font-size:15px !important;
+  line-height:1.65 !important;
+  padding:8px !important;
+  margin:3px 0 6px !important;
+}
+#game .onepage-quest .inline-sentence .inline-blank{
+  min-width:70px !important;
+  min-height:34px !important;
+  font-size:11px !important;
+}
+#game .onepage-quest .choice{
+  padding:6px 8px !important;
+  font-size:11px !important;
+}
+#game .onepage-quest .choices{
+  gap:5px !important;
+  margin:4px 0 !important;
+}
+#game .onepage-quest .action{
+  padding:7px 8px !important;
+  font-size:11px !important;
+}
+#game .onepage-quest .answer-art{
+  max-height:92px !important;
+}
+#game .onepage-quest .feedback{
+  font-size:12px !important;
+  min-height:20px !important;
+}
+#game .order-box{gap:6px !important}
+#game .order-row{
+  grid-template-columns:64px 1fr !important;
+  gap:7px !important;
+  padding:7px !important;
+}
+#game .order-sentence{font-size:13px !important}
+
+/* ---------- FINISH SCREEN ---------- */
+#result .shell{
+  height:100%;
+  max-width:900px;
+}
+#result .result{
+  height:100%;
+  min-height:0 !important;
+  padding:9px 14px !important;
+  display:grid !important;
+  grid-template-rows:minmax(0,1fr) auto auto;
+  align-items:center;
+}
+#result .ending-hero-image{
+  width:min(680px,88%) !important;
+  height:100% !important;
+  max-height:58dvh !important;
+  object-fit:contain !important;
+  margin:auto !important;
+}
+#result .stats{
+  width:min(540px,92%);
+  margin:4px auto 6px !important;
+  gap:7px !important;
+}
+#result .stat{padding:8px !important}
+#result .result-actions{
+  margin:0 auto !important;
+  padding:2px 0 0 !important;
+  gap:16px !important;
+}
+#result .result-hall-btn,
+#result .replay-image-btn{
+  width:clamp(92px,12dvh,125px) !important;
+  height:clamp(92px,12dvh,125px) !important;
+  flex:0 0 auto !important;
+}
+
+/* ---------- HALL / MODALS ---------- */
+.hall-modal,.teacher-modal{
+  padding:8px !important;
+}
+.hall-dialog{
+  width:min(1280px,99vw) !important;
+  height:min(900px,98dvh) !important;
+  padding:10px !important;
+}
+.hall-title-image{
+  max-height:13dvh !important;
+  width:min(620px,75%) !important;
+}
+.podium{margin-bottom:8px !important}
+.podium-badge{height:90px !important}
+.podium-card{padding:6px !important}
+.podium-name{font-size:15px !important}
+.hall-grid{gap:8px !important}
+.ranking-panel,.badge-panel{padding:8px !important}
+.badge-grid{gap:5px !important}
+.badge-item{min-height:105px !important;padding:4px !important}
+.badge-item img{height:70px !important}
+
+/* =========================================================
+   PHONE PORTRAIT
+   ========================================================= */
+@media(max-width:700px){
+  .screen{
+    padding:5px !important;
+  }
+
+  /* start */
+  #start .shell{justify-content:center}
+  #start .game-title-banner{
+    width:88vw !important;
+    max-height:15dvh !important;
+    margin:0 auto 2px !important;
+  }
+  #start .card{
+    width:98%;
+    max-height:81dvh;
+    padding:7px !important;
+  }
+  #start .hero-row{
+    grid-template-columns:1fr 1fr !important;
+    width:100% !important;
+    gap:6px !important;
+    margin:2px auto !important;
+  }
+  #start .hero{
+    border-width:2px !important;
+    border-radius:13px !important;
+    padding:4px !important;
+  }
+  #start .avatar-wrap{
+    height:22dvh !important;
+    min-height:132px !important;
+    max-height:175px !important;
+    border-radius:12px !important;
+    margin-bottom:3px !important;
+  }
+  #start .label-title{font-size:13px !important}
+  #start .label-sub{font-size:9px !important}
+  #start .namebox{margin:3px auto !important}
+  #start .namebox input{
+    min-height:38px !important;
+    padding:8px 10px !important;
+    font-size:14px !important;
+  }
+  #start .start-image-btn{
+    width:88px !important;
+    height:88px !important;
+  }
+  .top-tools #hallOpenStart,
+  .top-tools #teacherOpenStart{
+    width:48px !important;
+    height:48px !important;
+  }
+
+  /* selection */
+  #questionSelect .select-shell{
+    grid-template-rows:48px 30px 18px minmax(0,1fr) 22px;
+  }
+  .select-player{padding:3px 6px !important;font-size:12px}
+  .select-player img{width:30px !important;height:30px !important}
+  .select-hall-btn{width:44px !important;height:44px !important}
+  .select-heading{font-size:26px !important}
+  .select-subheading{font-size:11px !important}
+  .question-set-grid{
+    display:flex !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    gap:8px !important;
+    scroll-snap-type:x mandatory;
+    padding:2px 4px 6px !important;
+  }
+  .question-set-card{
+    min-width:82vw !important;
+    height:100% !important;
+    scroll-snap-align:center;
+    display:grid;
+    grid-template-rows:minmax(0,1fr) auto;
+  }
+  .question-set-thumb{
+    height:auto !important;
+    min-height:0 !important;
+  }
+  .question-set-body{padding:7px 9px !important}
+  .question-set-title{font-size:15px !important}
+  .select-note{font-size:9px !important}
+
+  /* game: fixed single-screen layout */
+  #game.screen{
+    height:100dvh !important;
+    overflow:hidden !important;
+  }
+  #game .layout-onepage{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    grid-template-rows:64px minmax(0,1fr) !important;
+    height:100% !important;
+    gap:5px !important;
+  }
+  #game .side-panel{
+    display:grid !important;
+    grid-template-columns:minmax(105px,1.5fr) minmax(80px,1fr) 52px 52px !important;
+    gap:4px !important;
+    height:64px !important;
+  }
+  #game .side-card{
+    height:64px !important;
+    min-height:0 !important;
+    padding:5px !important;
+    overflow:hidden;
+  }
+  #game .station-card{display:none !important}
+  #game #hallOpen,
+  #game #teacherOpen{
+    width:52px !important;
+    height:52px !important;
+    align-self:center;
+  }
+  #game .player-card .value{font-size:11px !important}
+  #game .side-card .label{font-size:9px !important}
+  #game .side-card .value{font-size:12px !important}
+  #game .main-stage{
+    grid-template-rows:68px minmax(0,1fr) !important;
+    gap:4px !important;
+  }
+  #game .compact-journey{
+    height:68px !important;
+    min-height:68px !important;
+    border-radius:12px !important;
+  }
+  #game .rail-row.new-rail{
+    height:40px !important;
+    background-size:auto 40px !important;
+  }
+  #game .compact-journey .side-train-progress{
+    bottom:19px !important;
+    width:35% !important;
+    min-width:115px !important;
+    max-width:175px !important;
+  }
+  #game .compact-journey .station-art{
+    width:90px !important;
+    max-height:44px !important;
+    bottom:21px !important;
+  }
+  #game .journey-label{
+    font-size:9px !important;
+    padding:2px 5px !important;
+  }
+  #game .onepage-gamegrid{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    grid-template-rows:28% minmax(0,72%) !important;
+    height:100% !important;
+    min-height:0 !important;
+    gap:4px !important;
+  }
+  #game .onepage-picture,
+  #game .onepage-quest{
+    height:100% !important;
+    min-height:0 !important;
+    border-radius:12px !important;
+    padding:5px !important;
+  }
+  #game .onepage-picture img{
+    height:calc(100% - 15px) !important;
+  }
+  #game .picture-hint{font-size:8px !important}
+  #game .onepage-quest{
+    overflow:auto !important;
+  }
+  #game .onepage-quest .station-title{font-size:14px !important}
+  #game .onepage-quest .quest-type{font-size:9px !important}
+  #game .onepage-quest .instruction{
+    font-size:10px !important;
+    padding:4px 6px !important;
+  }
+  #game .onepage-quest .inline-sentence{
+    font-size:12px !important;
+    line-height:1.55 !important;
+    padding:5px !important;
+  }
+  #game .onepage-quest .inline-sentence .inline-blank{
+    min-width:58px !important;
+    min-height:29px !important;
+    font-size:9px !important;
+  }
+  #game .onepage-quest .choice{
+    font-size:9.5px !important;
+    padding:5px 6px !important;
+  }
+  #game .onepage-quest .action{
+    font-size:9.5px !important;
+    padding:6px !important;
+  }
+  #game .onepage-quest .answer-art{
+    max-height:72px !important;
+  }
+  #game .order-row{
+    grid-template-columns:50px 1fr !important;
+    padding:5px !important;
+  }
+  #game .order-sentence{font-size:10px !important}
+
+  /* finish */
+  #result .result{
+    padding:6px !important;
+    grid-template-rows:minmax(0,1fr) auto auto !important;
+  }
+  #result .ending-hero-image{
+    width:94% !important;
+    max-height:52dvh !important;
+  }
+  #result .stats{
+    margin:2px auto !important;
+    gap:4px !important;
+  }
+  #result .stat{
+    padding:5px !important;
+  }
+  #result .stat .label{font-size:9px !important}
+  #result .stat .value{font-size:13px !important}
+  #result .result-actions{gap:10px !important}
+  #result .result-hall-btn,
+  #result .replay-image-btn{
+    width:88px !important;
+    height:88px !important;
+  }
+
+  /* hall */
+  .hall-dialog{
+    width:99vw !important;
+    height:99dvh !important;
+    border-radius:14px !important;
+    padding:7px !important;
+  }
+  .hall-title-image{
+    width:68% !important;
+    max-height:10dvh !important;
+  }
+  .hall-subtitle{font-size:10px !important;margin-bottom:4px !important}
+  .podium{
+    grid-template-columns:repeat(3,1fr) !important;
+    gap:4px !important;
+  }
+  .podium-card.rank1,.podium-card.rank2,.podium-card.rank3{
+    order:initial !important;
+    transform:none !important;
+  }
+  .podium-badge{height:62px !important}
+  .podium-name{font-size:11px !important}
+  .podium-score{font-size:9px !important}
+  .hall-grid{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:5px !important;
+  }
+  .ranking-table-wrap{max-height:28dvh !important}
+  .badge-grid{
+    grid-template-columns:repeat(4,1fr) !important;
+    max-height:31dvh !important;
+  }
+  .badge-item{min-height:82px !important}
+  .badge-item img{height:54px !important}
+  .badge-name{font-size:8px !important}
+
+  /* teacher modal */
+  .teacher-dialog{
+    width:99vw !important;
+    max-height:98dvh !important;
+    border-radius:14px !important;
+    padding:10px !important;
+  }
+}
+
+
+/* =========================================================
+   DESKTOP-ONLY EDITION — 16:9 / LAPTOP / PROJECTOR
+   Optimised for widths 1180px and above.
+   ========================================================= */
+
+html, body{
+  width:100%;
+  height:100%;
+  min-width:1180px;
+  overflow:hidden !important;
+}
+body{
+  min-height:100vh !important;
+}
+.screen{
+  width:100%;
+  height:100vh !important;
+  min-height:100vh !important;
+  padding:10px !important;
+  overflow:hidden !important;
+}
+.shell{
+  height:100%;
+  max-width:1440px !important;
+  margin:0 auto;
+}
+
+/* ---------- START SCREEN ---------- */
+#start .shell{
+  display:flex !important;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+#start .game-title-banner{
+  width:560px !important;
+  max-height:150px !important;
+  object-fit:contain !important;
+  margin:0 auto 4px !important;
+}
+#start .card{
+  width:760px !important;
+  height:540px !important;
+  max-height:none !important;
+  padding:18px !important;
+  display:flex !important;
+  flex-direction:column;
+  justify-content:center;
+  overflow:visible !important;
+}
+#start .hero-row{
+  width:650px !important;
+  max-width:650px !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:18px !important;
+  margin:4px auto 8px !important;
+}
+#start .hero{
+  padding:12px !important;
+  overflow:visible !important;
+}
+#start .avatar-wrap{
+  height:300px !important;
+  min-height:300px !important;
+  padding:8px !important;
+  overflow:hidden !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+#start .avatar-wrap img{
+  width:auto !important;
+  height:270px !important;
+  max-width:94% !important;
+  max-height:94% !important;
+  object-fit:contain !important;
+  object-position:center bottom !important;
+  border-radius:0 !important;
+}
+#start .label-title{
+  font-size:18px !important;
+  line-height:1.1 !important;
+}
+#start .label-sub{
+  font-size:12px !important;
+}
+#start .namebox{
+  width:520px !important;
+  max-width:520px !important;
+  margin:8px auto 4px !important;
+}
+#start .namebox input{
+  height:46px !important;
+  padding:10px 14px !important;
+  font-size:16px !important;
+}
+#start .start-image-btn{
+  width:118px !important;
+  height:118px !important;
+  margin:3px auto 0 !important;
+}
+.top-tools{
+  position:fixed !important;
+  top:14px !important;
+  right:18px !important;
+  display:flex !important;
+  gap:10px !important;
+  z-index:1600 !important;
+}
+.top-tools #hallOpenStart,
+.top-tools #teacherOpenStart{
+  width:64px !important;
+  height:64px !important;
+}
+
+/* ---------- QUESTION SELECTION ---------- */
+#questionSelect .select-shell{
+  height:100%;
+  max-width:1180px !important;
+  display:flex !important;
+  flex-direction:column;
+  align-items:center;
+}
+.select-topbar{
+  width:100%;
+  height:62px;
+  margin:0 0 2px !important;
+  gap:8px;
+}
+.select-player{
+  min-width:170px;
+  padding:6px 10px !important;
+}
+.select-player img{
+  width:38px !important;
+  height:38px !important;
+}
+.select-hall-btn,
+.select-home-btn{
+  width:60px !important;
+  height:60px !important;
+}
+.select-heading{
+  font-size:42px !important;
+  line-height:1 !important;
+  margin:2px 0 0 !important;
+}
+.select-subheading{
+  font-size:15px !important;
+  margin:2px 0 12px !important;
+}
+.question-set-grid{
+  width:100%;
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto !important;
+  display:grid !important;
+  grid-template-columns:repeat(3, 340px) !important;
+  justify-content:center !important;
+  align-content:start !important;
+  gap:18px !important;
+  padding:4px 8px 12px !important;
+}
+.question-set-card{
+  width:340px !important;
+  min-width:340px !important;
+  height:360px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  border-radius:20px !important;
+  overflow:hidden !important;
+}
+.question-set-thumb{
+  width:100% !important;
+  height:250px !important;
+  min-height:250px !important;
+  background:#fff !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:hidden !important;
+}
+.question-set-thumb img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+  background:#fff !important;
+}
+.question-set-body{
+  flex:1;
+  padding:12px 14px !important;
+}
+.question-set-title{
+  font-size:20px !important;
+  line-height:1.15 !important;
+}
+.question-set-meta{
+  font-size:12px !important;
+}
+.question-set-play{
+  margin-top:8px !important;
+  padding:7px 12px !important;
+  font-size:13px !important;
+}
+.select-note{
+  margin:4px 0 0 !important;
+  font-size:11px !important;
+}
+
+/* One set should not become an enormous full-width card */
+.question-set-grid > .question-set-card:only-child{
+  grid-column:2;
+}
+
+/* ---------- GAME SCREEN ---------- */
+#game .onepage-shell{
+  height:100% !important;
+  max-width:1440px !important;
+}
+#game .layout-onepage{
+  height:100% !important;
+  min-height:0 !important;
+  display:grid !important;
+  grid-template-columns:185px minmax(0,1fr) !important;
+  grid-template-rows:1fr !important;
+  gap:8px !important;
+}
+#game .side-panel{
+  min-height:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:6px !important;
+}
+#game .side-card{
+  padding:8px 9px !important;
+}
+#game .station-card{
+  flex:1 1 auto !important;
+  min-height:180px !important;
+}
+#game #hallOpen,
+#game #teacherOpen{
+  width:100% !important;
+  height:72px !important;
+}
+#game .main-stage{
+  height:100% !important;
+  min-height:0 !important;
+  display:grid !important;
+  grid-template-rows:96px minmax(0,1fr) !important;
+  gap:7px !important;
+}
+#game .compact-journey{
+  height:96px !important;
+  min-height:96px !important;
+}
+#game .rail-row.new-rail{
+  height:58px !important;
+  background-size:auto 58px !important;
+}
+#game .compact-journey .side-train-progress{
+  bottom:29px !important;
+  width:25% !important;
+  max-width:300px !important;
+  min-width:170px !important;
+}
+#game .compact-journey .station-art{
+  width:145px !important;
+  max-height:66px !important;
+  bottom:32px !important;
+}
+#game .onepage-gamegrid{
+  height:100% !important;
+  min-height:0 !important;
+  display:grid !important;
+  grid-template-columns:minmax(340px,40%) minmax(0,1fr) !important;
+  grid-template-rows:1fr !important;
+  gap:7px !important;
+}
+#game .onepage-picture,
+#game .onepage-quest{
+  height:100% !important;
+  min-height:0 !important;
+  overflow:auto !important;
+  padding:9px !important;
+}
+#game .onepage-picture{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+}
+#game .onepage-picture img{
+  width:100% !important;
+  height:calc(100% - 24px) !important;
+  max-height:none !important;
+  object-fit:contain !important;
+  object-position:center !important;
+}
+#game .picture-hint{
+  font-size:10px !important;
+}
+#game .onepage-quest .station-title{
+  font-size:20px !important;
+}
+#game .onepage-quest .quest-type{
+  font-size:12px !important;
+}
+#game .onepage-quest .instruction{
+  font-size:13px !important;
+  padding:7px 9px !important;
+}
+#game .onepage-quest .inline-sentence{
+  font-size:16px !important;
+  line-height:1.7 !important;
+  padding:9px !important;
+}
+#game .onepage-quest .inline-sentence .inline-blank{
+  min-width:74px !important;
+  min-height:36px !important;
+  font-size:11px !important;
+}
+#game .onepage-quest .choice{
+  font-size:12px !important;
+  padding:7px 9px !important;
+}
+#game .onepage-quest .action{
+  font-size:12px !important;
+  padding:8px 10px !important;
+}
+#game .onepage-quest .answer-art{
+  max-height:105px !important;
+}
+#game .order-row{
+  grid-template-columns:66px 1fr !important;
+  padding:7px !important;
+}
+#game .order-sentence{
+  font-size:13px !important;
+}
+
+/* ---------- FINISH ---------- */
+#result .shell{
+  max-width:900px !important;
+}
+#result .result{
+  height:100% !important;
+  min-height:0 !important;
+  padding:10px 16px !important;
+  display:grid !important;
+  grid-template-rows:minmax(0,1fr) auto auto !important;
+  align-items:center !important;
+}
+#result .ending-hero-image{
+  width:min(700px,88%) !important;
+  height:100% !important;
+  max-height:560px !important;
+  object-fit:contain !important;
+  margin:auto !important;
+}
+#result .stats{
+  width:520px !important;
+  margin:5px auto !important;
+}
+#result .result-actions{
+  width:100% !important;
+  display:flex !important;
+  justify-content:center !important;
+  gap:18px !important;
+  padding:4px 0 2px !important;
+  margin:0 !important;
+}
+#result .result-hall-btn,
+#result .replay-image-btn{
+  width:120px !important;
+  height:120px !important;
+  flex:0 0 120px !important;
+  margin:0 !important;
+}
+
+/* ---------- HALL OF FAME ---------- */
+.hall-modal{
+  padding:8px !important;
+}
+.hall-dialog{
+  width:min(1260px,98vw) !important;
+  height:min(850px,96vh) !important;
+  padding:12px !important;
+}
+.hall-title-image{
+  width:520px !important;
+  max-height:120px !important;
+}
+.podium{
+  max-width:820px !important;
+  gap:8px !important;
+  margin-bottom:10px !important;
+}
+.podium-badge{
+  height:95px !important;
+}
+.hall-grid{
+  grid-template-columns:minmax(500px,1.1fr) minmax(420px,.9fr) !important;
+  gap:10px !important;
+}
+.ranking-table-wrap{
+  max-height:390px !important;
+}
+.badge-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  max-height:470px !important;
+}
+
+/* ---------- DEVELOPER MODE ---------- */
+.teacher-dialog{
+  width:min(900px,94vw) !important;
+  max-height:94vh !important;
+}
+
+/* ---------- Desktop viewport safety ---------- */
+@media(max-height:760px){
+  #start .game-title-banner{
+    width:470px !important;
+    max-height:110px !important;
+  }
+  #start .card{
+    height:500px !important;
+  }
+  #start .avatar-wrap{
+    height:250px !important;
+    min-height:250px !important;
+  }
+  #start .avatar-wrap img{
+    height:225px !important;
+  }
+  #start .start-image-btn{
+    width:96px !important;
+    height:96px !important;
+  }
+  #result .ending-hero-image{
+    max-height:470px !important;
+  }
+  #result .result-hall-btn,
+  #result .replay-image-btn{
+    width:100px !important;
+    height:100px !important;
+    flex-basis:100px !important;
+  }
+}
+
+
+#desktopOnlyNotice{display:none}
+@media(max-width:1179px){
+  #desktopOnlyNotice{
+    display:flex !important;
+    position:fixed;
+    inset:0;
+    z-index:99999;
+    align-items:center;
+    justify-content:center;
+    background:#0f172a;
+    color:white;
+    padding:20px;
+  }
+  .desktop-notice-card{
+    width:min(480px,92vw);
+    text-align:center;
+    border:2px solid #fbbf24;
+    border-radius:20px;
+    background:#1e293b;
+    padding:28px;
+    font-size:20px;
+    box-shadow:0 20px 60px #0008;
+  }
+}
+
+
+/* ===== Home button ===== */
+#homeOpen,
+#homeBackStart{
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  overflow:visible !important;
+}
+#homeOpen{
+  width:100% !important;
+  height:72px !important;
+}
+.home-btn-art{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+  filter:drop-shadow(0 7px 7px rgba(0,0,0,.35));
+  transition:transform .16s ease,filter .16s ease;
+}
+#homeOpen:hover .home-btn-art{
+  transform:scale(1.04);
+  filter:drop-shadow(0 10px 10px rgba(0,0,0,.45));
+}
+.select-home-btn{
+  width:60px !important;
+  height:60px !important;
+  background-repeat:no-repeat !important;
+  background-position:center !important;
+  background-size:contain !important;
+  filter:drop-shadow(0 6px 7px rgba(0,0,0,.35));
+}
+.select-home-btn:hover{
+  transform:scale(1.04);
+}
+
+
+.cloud-config-note{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+#cloudStatusText{
+  flex:1;
+  min-width:220px;
+  font-weight:800;
+}
+.cloud-online{color:#166534}
+.cloud-offline{color:#b91c1c}
+.cloud-saving::after{
+  content:" • menyegerak...";
+  color:#0369a1;
+}
+
+
+#publicCloudStatus{
+  display:inline-block;
+  padding:2px 7px;
+  border-radius:999px;
+  background:#1e293b;
+  color:#93c5fd;
+  border:1px solid #475569;
+  font-weight:900;
+}
+
+</style>
+</head>
+<body>
+
+<div id="desktopOnlyNotice">
+  <div class="desktop-notice-card">
+    <b>Versi Desktop</b><br>
+    Sila buka permainan ini pada komputer atau skrin yang lebih besar.
+  </div>
+</div>
+
+
+<section id="start" class="screen active"><div class="top-tools"><button class="hall-start-btn" id="hallOpenStart" aria-label="Hall of Fame"><img class="btn-art hall-btn-art" src="assets/img_03_05f1be4ad6f9.png" alt="Hall of Fame"></button><button class="teacher-start-btn" id="teacherOpenStart" aria-label="Developer Mode"><img class="developer-btn-art" src="assets/img_04_8b2d679d271d.png" alt="Developer Mode"></button></div>
+  <div class="shell">
+    <img class="game-title-banner" src="assets/img_05_76f64f47ae84.png" alt="Ekspres Kembara Menulis">
+    
+    <div class="card">
+      
+      <div class="hero-row">
+        <button class="hero" data-hero="boy">
+          <div class="avatar-wrap"><img src="assets/img_06_f40369abe107.png" alt="Lelaki"></div>
+          <div class="label-title">Lelaki</div>
+          <div class="label-sub">Boy</div>
+        </button>
+        <button class="hero" data-hero="girl">
+          <div class="avatar-wrap"><img src="assets/img_07_694b50661fe1.png" alt="Perempuan"></div>
+          <div class="label-title">Perempuan</div>
+          <div class="label-sub">Girl</div>
+        </button>
+      </div>
+      <div class="namebox" id="nameBox" style="margin-top:8px">
+        
+        <input id="playerName" placeholder="Taip nama / 输入姓名">
+      </div>
+      <button class="image-action-btn start-image-btn" id="startBtn" aria-label="Mulakan permainan"><img src="assets/img_08_1cd33744e01a.png" alt="Mula"></button>
+    </div>
+  </div>
+</section>
+
+
+
+<section id="questionSelect" class="screen">
+  <div class="shell select-shell">
+    <div class="select-topbar">
+      <div class="select-player" id="selectPlayer"></div>
+      <button class="select-hall-btn" id="hallOpenSelect" aria-label="Hall of Fame"></button><button class="select-home-btn" id="homeBackStart" aria-label="Laman Utama" style="background-image:url('assets/img_09_ed7f403f0729.png')"></button>
+    </div>
+
+    <div class="select-heading">Pilih Latihan</div>
+    <div class="select-subheading">选择练习</div>
+
+    <div id="questionSetGrid" class="question-set-grid"></div>
+
+    <div class="select-note"><span id="publicCloudStatus">☁ Cloud</span> • 
+      Guru boleh menambah lebih banyak gambar dan set ayat melalui <b>Mod Guru</b>.
+    </div>
+  </div>
+</section>
+
+<section id="game" class="screen">
+  <div class="shell onepage-shell">
+    <div class="layout-onepage">
+      <aside class="side-panel">
+        <div class="side-card player-card">
+          <div class="label">Pemain <span class="cn-inline">玩家</span></div>
+          <div class="value" id="hudPlayer"></div>
+        </div>
+
+        <div class="side-card">
+          <div class="label">Markah <span class="cn-inline">分数</span></div>
+          <div class="value"><span id="expText">0</span>/100</div>
+          <div class="bar"><div id="expBar"></div></div>
+        </div>
+<div class="side-card station-card">
+          <div class="label">Kemajuan <span class="cn-inline">进度</span></div>
+          <div class="map vertical-map" id="map"></div>
+        </div>
+
+        <button class="side-btn hall-side-btn" id="hallOpen" aria-label="Hall of Fame"><img class="btn-art hall-btn-art" src="assets/img_03_05f1be4ad6f9.png" alt="Hall of Fame"></button><button id="homeOpen" class="home-side-btn" aria-label="Laman Utama"><img class="home-btn-art" src="assets/img_09_ed7f403f0729.png" alt="Laman Utama"></button>
+          <button class="side-btn" id="teacherOpen" aria-label="Developer Mode"><img class="developer-btn-art" src="assets/img_04_8b2d679d271d.png" alt="Developer Mode"></button>
+      </aside>
+
+      <main class="main-stage">
+        <div class="journey-strip compact-journey">
+          <div class="journey-label">🚉 Stesen <span id="journeyStage">1 / 6</span></div>
+          <div class="rail-row new-rail" aria-hidden="true"></div>
+          <img id="journeyTrain" class="side-train-progress" src="assets/img_10_3bc529b53fde.png" alt="Kereta api bergerak ke kanan">
+          <img class="station-art" src="assets/img_11_581e11c0e99f.png" alt="Stesen kereta api">
+        </div>
+
+        <div class="gamegrid onepage-gamegrid">
+          <div class="picture card onepage-picture">
+            <img id="stimulusImage" src="assets/img_12_4825110f1adf.png" alt="Gambar rangsangan">
+            <div class="tiny picture-hint">🔎 Teliti gambar untuk mendapatkan petunjuk.<br><span class="cn-help">仔细观察图片寻找线索。</span></div>
+          </div>
+          <div class="quest card onepage-quest" id="quest"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<section id="result" class="screen">
+  <div class="shell">
+    <div class="card result">
+      <img id="endingHeroImage" class="ending-hero-image" alt="Tamat permainan">
+      <div class="stats">
+        <div class="stat"><div class="label">Markah</div><div class="value" id="finalExp"></div></div>
+        <div class="stat"><div class="label">Bintang</div><div class="value" id="finalStars"></div></div>
+      </div>
+      <div class="result-actions"><button class="mainbtn result-hall-btn" id="hallOpenResult" aria-label="Hall of Fame"><img class="btn-art hall-btn-art" src="assets/img_03_05f1be4ad6f9.png" alt="Hall of Fame"></button><button class="image-action-btn replay-image-btn" id="playAgainBtn" aria-label="Main semula"><img src="assets/img_13_e41936df708b.png" alt="Main Semula"></button></div>
+    </div>
+  </div>
+</section>
+
+
+
+<div id="hallModal" class="hall-modal" aria-hidden="true">
+  <div class="hall-dialog">
+    <button id="hallClose" class="hall-close" aria-label="Tutup">✕</button>
+    <img class="hall-title-image" src="assets/img_14_ea386e2c5e2f.png" alt="Hall of Fame"><div class="hall-subtitle">Ranking Pelajar & Koleksi Lencana <span class="cn-help">学生排行榜与徽章收藏</span></div>
+
+    <div id="hallEmpty" class="hall-empty" style="display:none">
+      Belum ada rekod permainan.<br><span class="cn-help">还没有游戏记录。</span>
+    </div>
+
+    <div id="hallContent">
+      <div class="podium" id="hallPodium"></div>
+
+      <div class="hall-grid">
+        <section class="ranking-panel">
+          <div class="hall-section-title">📊 Ranking Keseluruhan</div>
+          <div class="ranking-help">Ranking berdasarkan <b>jumlah markah terkumpul</b>.</div>
+          <div class="ranking-table-wrap">
+            <table class="ranking-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nama</th>
+                  <th>Jumlah</th>
+                  <th>Terbaik</th>
+                  <th>Main</th>
+                  <th>Rank</th>
+                </tr>
+              </thead>
+              <tbody id="rankingBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="badge-panel">
+          <div class="hall-section-title">🎖️ Lencana <span id="badgeStudentName"></span></div>
+          <div class="badge-summary" id="badgeSummary"></div>
+          <div class="badge-grid" id="badgeGrid"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="teacherModal" class="teacher-modal" aria-hidden="true">
+  <div class="teacher-dialog">
+    <button id="teacherClose" class="teacher-close" aria-label="Tutup">✕</button>
+    <div class="teacher-title">👩‍🏫 Mod Guru</div>
+
+    <div id="teacherLock" class="teacher-lock">
+      <p>Masukkan PIN guru.</p>
+      <div class="teacher-row">
+        <input id="teacherPin" type="password" inputmode="numeric" placeholder="PIN">
+        <button id="teacherUnlock" class="teacher-action primary">Masuk</button>
+      </div>
+      <div class="tiny teacher-muted">PIN lalai: 1234</div>
+    </div>
+
+    
+<div id="teacherEditor" class="teacher-editor" style="display:none">
+
+  <div class="teacher-note cloud-config-note">
+    <b>☁ Google Cloud</b>
+    <span id="cloudStatusText">Belum disambungkan.</span>
+    <button type="button" class="teacher-action" id="cloudTestBtn">Uji Sambungan</button>
+  </div>
+
+  <div class="teacher-library">
+    <div class="teacher-grid teacher-grid-top">
+      <div>
+        <label class="teacher-label">Set tersimpan</label>
+        <select id="teacherSetSelect" class="teacher-select">
+          <option value="">— Pilih set —</option>
+        </select>
+      </div>
+      <div class="teacher-library-actions">
+        <button id="teacherLoadSet" class="teacher-action">📂 Buka</button>
+        <button id="teacherNewSet" class="teacher-action">➕ Set Baharu</button>
+        <button id="teacherDeleteSet" class="teacher-action danger">🗑 Padam</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="teacher-grid">
+    <div>
+      <label class="teacher-label">Nama set</label>
+      <input id="teacherSetName" type="text" placeholder="Contoh: Perkelahan">
+    </div>
+    <div>
+      <label class="teacher-label">Gambar rangsangan</label>
+      <input id="teacherImage" type="file" accept="image/*">
+      <div class="tiny teacher-muted">Jika tidak pilih gambar baharu, gambar set semasa dikekalkan.</div>
+    </div>
+  </div>
+
+  <div class="teacher-note">
+    <b>Pilih perkataan kosong secara manual:</b> taip ayat, kemudian klik butang <b>Jana Perkataan</b>.
+    Klik perkataan yang mahu dijadikan ruang kosong. Bilangan sasaran ialah
+    Stesen 1 = 2, Stesen 2–3 = 3, Stesen 4–5 = 4.
+  </div>
+
+  <div class="teacher-sentences" id="teacherSentenceEditor">
+    <div class="sentence-editor-row" data-row="1">
+      <label class="teacher-label">Ayat 1</label>
+      <textarea id="teacherS1" placeholder="Ayat 1"></textarea>
+      <div class="sentence-tools">
+        <button type="button" class="teacher-action token-generate" data-row="1">🔤 Jana Perkataan</button>
+        <span class="blank-target">Pilih 2 perkataan</span>
+      </div>
+      <div class="token-pool" id="tokenPool1"></div>
+    </div>
+
+    <div class="sentence-editor-row" data-row="2">
+      <label class="teacher-label">Ayat 2</label>
+      <textarea id="teacherS2" placeholder="Ayat 2"></textarea>
+      <div class="sentence-tools">
+        <button type="button" class="teacher-action token-generate" data-row="2">🔤 Jana Perkataan</button>
+        <span class="blank-target">Pilih 3 perkataan</span>
+      </div>
+      <div class="token-pool" id="tokenPool2"></div>
+    </div>
+
+    <div class="sentence-editor-row" data-row="3">
+      <label class="teacher-label">Ayat 3</label>
+      <textarea id="teacherS3" placeholder="Ayat 3"></textarea>
+      <div class="sentence-tools">
+        <button type="button" class="teacher-action token-generate" data-row="3">🔤 Jana Perkataan</button>
+        <span class="blank-target">Pilih 3 perkataan</span>
+      </div>
+      <div class="token-pool" id="tokenPool3"></div>
+    </div>
+
+    <div class="sentence-editor-row" data-row="4">
+      <label class="teacher-label">Ayat 4</label>
+      <textarea id="teacherS4" placeholder="Ayat 4"></textarea>
+      <div class="sentence-tools">
+        <button type="button" class="teacher-action token-generate" data-row="4">🔤 Jana Perkataan</button>
+        <span class="blank-target">Pilih 4 perkataan</span>
+      </div>
+      <div class="token-pool" id="tokenPool4"></div>
+    </div>
+
+    <div class="sentence-editor-row" data-row="5">
+      <label class="teacher-label">Ayat 5</label>
+      <textarea id="teacherS5" placeholder="Ayat 5"></textarea>
+      <div class="sentence-tools">
+        <button type="button" class="teacher-action token-generate" data-row="5">🔤 Jana Perkataan</button>
+        <span class="blank-target">Pilih 4 perkataan</span>
+      </div>
+      <div class="token-pool" id="tokenPool5"></div>
+    </div>
+  </div>
+
+  <div class="teacher-note">
+    <b>Auto Bina:</b> hanya perkataan yang dipilih akan dikosongkan. Sistem menambah satu pilihan pengganggu bagi setiap stesen.
+    Stesen akhir kekal sebagai susunan lima ayat dengan nombor 1–5.
+  </div>
+
+  <div class="teacher-actions">
+    <button id="teacherApply" class="teacher-action primary">💾 Simpan & Guna</button>
+    <button id="teacherReset" class="teacher-action danger">↺ Pulihkan Set Asal</button><button id="teacherResetHall" class="teacher-action danger">🧹 Reset Hall of Fame</button>
+  </div>
+  <div id="teacherStatus" class="teacher-status"></div>
+</div>
+</div>
+</div>
+<audio id="bgm" loop preload="auto">
+  <source src="assets/audio_15_7c92a3572b78.mp3" type="audio/mpeg">
+</audio>
+<button class="music-btn" id="musicToggle">🎵 Muzik: ON</button>
+
+<script>
+const heroImages = {
+  boy: "assets/img_06_f40369abe107.png",
+  girl: "assets/img_07_694b50661fe1.png"
+};
+const feedbackImages = {
+  correct: "assets/img_16_72ed1787b460.png",
+  wrong: "assets/img_17_8b3e251e81da.png"
+};
+const stationData = [{"title": "🚉 Stesen 1 — Mula Perjalanan", "type": "2 RUANG KOSONG • 3 PILIHAN", "instruction": "Klik dua perkataan yang betul untuk melengkapkan ayat.", "template": "Pada cuti <span class='inline-blank answer-slot empty' data-slot='0' title='Klik untuk buang jawapan'></span> yang lalu, kami sekeluarga telah <span class='inline-blank answer-slot empty' data-slot='1' title='Klik untuk buang jawapan'></span> membersihkan rumah.", "answers": ["persekolahan", "bergotong-royong"], "options": ["persekolahan", "bergotong-royong", "bermain"]}, {"title": "🚉 Stesen 2 — Laluan Daun Kering", "type": "3 RUANG KOSONG • 4 PILIHAN", "instruction": "Lengkapkan ayat dengan tiga perkataan yang betul.", "template": "<span class='inline-blank answer-slot empty' data-slot='0' title='Klik untuk buang jawapan'></span> menyapu daun kering di <span class='inline-blank answer-slot empty' data-slot='1' title='Klik untuk buang jawapan'></span> rumah dengan sebatang penyapu <span class='inline-blank answer-slot empty' data-slot='2' title='Klik untuk buang jawapan'></span>.", "answers": ["Ayah", "halaman", "lidi"], "options": ["Ayah", "halaman", "lidi", "meja"]}, {"title": "🚉 Stesen 3 — Rak Ilmu", "type": "3 RUANG KOSONG • 4 PILIHAN", "instruction": "Pilih tiga perkataan yang sesuai berdasarkan ayat dan gambar.", "template": "<span class='inline-blank answer-slot empty' data-slot='0' title='Klik untuk buang jawapan'></span> menyusun buku-buku lama di atas <span class='inline-blank answer-slot empty' data-slot='1' title='Klik untuk buang jawapan'></span> kayu dengan teratur supaya kelihatan <span class='inline-blank answer-slot empty' data-slot='2' title='Klik untuk buang jawapan'></span>.", "answers": ["Abang", "rak", "kemas"], "options": ["Abang", "rak", "kemas", "petang"]}, {"title": "🚉 Stesen 4 — Jamuan Petang", "type": "4 RUANG KOSONG • 5 PILIHAN", "instruction": "Lengkapkan ayat dengan empat perkataan yang betul.", "template": "<span class='inline-blank answer-slot empty' data-slot='0' title='Klik untuk buang jawapan'></span> menghidangkan <span class='inline-blank answer-slot empty' data-slot='1' title='Klik untuk buang jawapan'></span> petang yang enak di atas <span class='inline-blank answer-slot empty' data-slot='2' title='Klik untuk buang jawapan'></span> makan untuk kami <span class='inline-blank answer-slot empty' data-slot='3' title='Klik untuk buang jawapan'></span>.", "answers": ["Ibu", "minuman", "meja", "sekeluarga"], "options": ["Ibu", "minuman", "meja", "sekeluarga", "daun"]}, {"title": "🚉 Stesen 5 — Hati Gembira", "type": "4 RUANG KOSONG • 5 PILIHAN", "instruction": "Pilih empat perkataan yang tepat untuk melengkapkan ayat terakhir.", "template": "<span class='inline-blank answer-slot empty' data-slot='0' title='Klik untuk buang jawapan'></span> berasa <span class='inline-blank answer-slot empty' data-slot='1' title='Klik untuk buang jawapan'></span> dapat <span class='inline-blank answer-slot empty' data-slot='2' title='Klik untuk buang jawapan'></span> ibu <span class='inline-blank answer-slot empty' data-slot='3' title='Klik untuk buang jawapan'></span>.", "answers": ["Saya", "gembira", "membantu", "bapa"], "options": ["Saya", "gembira", "membantu", "bapa", "sedih"]}];
+const fullSentences = ['Pada cuti persekolahan yang lalu, kami sekeluarga telah bergotong-royong membersihkan rumah.', 'Ayah menyapu daun kering di halaman rumah dengan sebatang penyapu lidi.', 'Abang menyusun buku-buku lama di atas rak kayu dengan teratur supaya kelihatan kemas.', 'Ibu menghidangkan minuman petang yang enak di atas meja makan untuk kami sekeluarga.', 'Saya berasa gembira dapat membantu ibu bapa.'];
+const finalDisplayOrder = [2, 0, 4, 1, 3];
+
+let hero = null;
+let player = "Pemain";
+let stage = 0;         // 0..5
+let exp = 0;
+let gear = ["🎒"];
+let locked = false;
+
+const BADGE_IMAGES = {"first_finish": "assets/img_18_8e05ea2f6903.png", "no_wrong": "assets/img_19_4ee97ca53d7a.png", "all_wrong": "assets/img_20_d17dcf3fbd65.png", "correct3": "assets/img_21_3d153f152039.png", "correct5": "assets/img_22_41b50f6ac8fd.png", "wrong3": "assets/img_23_2fde16423da3.png", "wrong5": "assets/img_24_786c27fd5b2b.png", "complete1": "assets/img_25_11d64724e328.png", "complete2": "assets/img_26_7c808d484b6f.png", "complete5": "assets/img_27_3669c6f9352d.png", "complete10": "assets/img_28_4da7e8cc6384.png", "mvp1": "assets/img_29_a915eebd186b.png", "mvp2": "assets/img_30_d466df20cd40.png", "mvp3": "assets/img_31_5fd69ef06f6a.png", "gold": "assets/img_32_f53691936969.png", "silver": "assets/img_33_72ca95269733.png", "bronze": "assets/img_34_ff65fab6b782.png", "fmvp1": "assets/img_35_9a11acc1a613.png", "fmvp3": "assets/img_36_317069f0497a.png", "fmvp6": "assets/img_37_168b3b482cd8.png", "fmvp12": "assets/img_38_34c69f8d0318.png"};
+const BADGE_META = [{"id": "first_finish", "name": "Tamat Kali Pertama", "desc": "Selesaikan permainan buat kali pertama."}, {"id": "no_wrong", "name": "Tamat Tanpa Salah", "desc": "Selesaikan satu permainan tanpa jawapan salah."}, {"id": "all_wrong", "name": "Tamat Semua Salah", "desc": "Setiap stesen mempunyai sekurang-kurangnya satu cubaan salah sebelum tamat."}, {"id": "correct3", "name": "3 Betul Berturut", "desc": "Capai 3 jawapan betul berturut-turut."}, {"id": "correct5", "name": "5 Betul Berturut", "desc": "Capai 5 jawapan betul berturut-turut."}, {"id": "wrong3", "name": "3 Salah Berturut", "desc": "Capai 3 cubaan salah berturut-turut."}, {"id": "wrong5", "name": "5 Salah Berturut", "desc": "Capai 5 cubaan salah berturut-turut."}, {"id": "complete1", "name": "Tamat Permainan 1X", "desc": "Selesaikan permainan 1 kali."}, {"id": "complete2", "name": "Tamat Permainan 2X", "desc": "Selesaikan permainan 2 kali."}, {"id": "complete5", "name": "Tamat Permainan 5X", "desc": "Selesaikan permainan 5 kali."}, {"id": "complete10", "name": "Tamat Permainan 10X", "desc": "Selesaikan permainan 10 kali."}, {"id": "mvp1", "name": "MVP Tempat 1", "desc": "Ranking keseluruhan tempat pertama."}, {"id": "mvp2", "name": "MVP Tempat 2", "desc": "Ranking keseluruhan tempat kedua."}, {"id": "mvp3", "name": "MVP Tempat 3", "desc": "Ranking keseluruhan tempat ketiga."}, {"id": "gold", "name": "Emas Tempat 4–10", "desc": "Ranking keseluruhan tempat 4 hingga 10."}, {"id": "silver", "name": "Perak Tempat 11–20", "desc": "Ranking keseluruhan tempat 11 hingga 20."}, {"id": "bronze", "name": "Gangsa Tempat 21+", "desc": "Ranking keseluruhan tempat 21 dan seterusnya."}, {"id": "fmvp1", "name": "FMVP 1 Bulan", "desc": "Berada dalam Top 3 pada sekurang-kurangnya 1 bulan."}, {"id": "fmvp3", "name": "FMVP 3 Bulan", "desc": "Berada dalam Top 3 pada sekurang-kurangnya 3 bulan."}, {"id": "fmvp6", "name": "FMVP 6 Bulan", "desc": "Berada dalam Top 3 pada sekurang-kurangnya 6 bulan."}, {"id": "fmvp12", "name": "FMVP 1 Tahun", "desc": "Berada dalam Top 3 pada sekurang-kurangnya 12 bulan."}];
+const SCORE_BASE = [15,15,15,15,15,25];
+
+
+const ENDING_IMAGES = {
+  boy: "assets/img_39_b392c8518c08.png",
+  girl: "assets/img_40_e7a255b44471.png"
+};
+
+let sessionStats = createSessionStats();
+let sessionSaved = false;
+
+function createSessionStats() {
+  return {
+    wrongChecks: 0,
+    correctChecks: 0,
+    currentCorrectStreak: 0,
+    currentWrongStreak: 0,
+    maxCorrectStreak: 0,
+    maxWrongStreak: 0,
+    stationWrong: [false,false,false,false,false,false],
+    stationWrongCount: [0,0,0,0,0,0],
+    stationScored: [false,false,false,false,false,false],
+    mark: 0
+  };
+}
+
+function recordAttempt(isCorrect, stationIndex) {
+  if (isCorrect) {
+    sessionStats.correctChecks++;
+    sessionStats.currentCorrectStreak++;
+    sessionStats.currentWrongStreak = 0;
+    sessionStats.maxCorrectStreak = Math.max(sessionStats.maxCorrectStreak, sessionStats.currentCorrectStreak);
+  } else {
+    sessionStats.wrongChecks++;
+    sessionStats.currentWrongStreak++;
+    sessionStats.currentCorrectStreak = 0;
+    sessionStats.maxWrongStreak = Math.max(sessionStats.maxWrongStreak, sessionStats.currentWrongStreak);
+    sessionStats.stationWrong[stationIndex] = true;
+    sessionStats.stationWrongCount[stationIndex]++;
+  }
+}
+
+function awardStationMark(stationIndex) {
+  if (sessionStats.stationScored[stationIndex]) return;
+  sessionStats.stationScored[stationIndex] = true;
+  const base = SCORE_BASE[stationIndex];
+  const minMark = stationIndex === 5 ? 10 : 5;
+  const gained = Math.max(minMark, base - sessionStats.stationWrongCount[stationIndex] * 3);
+  sessionStats.mark += gained;
+  exp = sessionStats.mark;
+  updateHud();
+}
+
+function hallKey(name) {
+  return name.trim().toLocaleLowerCase('ms-MY').replace(/\s+/g,' ');
+}
+
+function loadHallData() {
+  if (cloudHallCache && cloudHallCache.students) return cloudHallCache;
+  try {
+    const data = JSON.parse(localStorage.getItem('trainBuilderHallOfFame') || '{"students":{}}');
+    if (!data.students) data.students = {};
+    return data;
+  } catch(e) {
+    return {students:{}};
+  }
+}
+
+function saveHallData(data) {
+  localStorage.setItem('trainBuilderHallOfFame', JSON.stringify(data));
+}
+
+function monthKey(date = new Date()) {
+  return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0');
+}
+
+function getSortedStudents(data) {
+  return Object.values(data.students).sort((a,b) =>
+    (b.totalMarks || 0) - (a.totalMarks || 0) ||
+    (b.bestMark || 0) - (a.bestMark || 0) ||
+    (a.totalWrong || 0) - (b.totalWrong || 0) ||
+    a.name.localeCompare(b.name)
+  );
+}
+
+function currentRankBadge(rank) {
+  if (rank === 1) return 'mvp1';
+  if (rank === 2) return 'mvp2';
+  if (rank === 3) return 'mvp3';
+  if (rank >= 4 && rank <= 10) return 'gold';
+  if (rank >= 11 && rank <= 20) return 'silver';
+  return 'bronze';
+}
+
+function monthlyTop3MonthsForStudent(data, key) {
+  const months = new Set();
+  const allMonths = new Set();
+  Object.values(data.students).forEach(s => {
+    Object.keys(s.monthlyMarks || {}).forEach(m => allMonths.add(m));
+  });
+
+  [...allMonths].forEach(month => {
+    const ranked = Object.values(data.students)
+      .filter(s => (s.monthlyMarks?.[month] || 0) > 0)
+      .sort((a,b) =>
+        (b.monthlyMarks?.[month] || 0) - (a.monthlyMarks?.[month] || 0) ||
+        (b.bestMark || 0) - (a.bestMark || 0) ||
+        a.name.localeCompare(b.name)
+      );
+    ranked.slice(0,3).forEach(s => {
+      if (s.key === key) months.add(month);
+    });
+  });
+  return months.size;
+}
+
+function dynamicBadgesForStudent(data, student, rank) {
+  const badges = new Set(student.earnedBadges || []);
+  if (rank) badges.add(currentRankBadge(rank));
+
+  const top3Months = monthlyTop3MonthsForStudent(data, student.key);
+  if (top3Months >= 1) badges.add('fmvp1');
+  if (top3Months >= 3) badges.add('fmvp3');
+  if (top3Months >= 6) badges.add('fmvp6');
+  if (top3Months >= 12) badges.add('fmvp12');
+
+  return badges;
+}
+
+function recordGameCompletion() {
+  if (sessionSaved) return;
+  sessionSaved = true;
+
+  const data = loadHallData();
+  const key = hallKey(player);
+  const currentMonth = monthKey();
+
+  const student = data.students[key] || {
+    key,
+    name: player,
+    gender: hero,
+    games: 0,
+    totalMarks: 0,
+    bestMark: 0,
+    totalWrong: 0,
+    totalCorrect: 0,
+    monthlyMarks: {},
+    earnedBadges: []
+  };
+
+  student.name = player;
+  student.gender = hero;
+  student.games = (student.games || 0) + 1;
+  student.totalMarks = (student.totalMarks || 0) + sessionStats.mark;
+  student.bestMark = Math.max(student.bestMark || 0, sessionStats.mark);
+  student.totalWrong = (student.totalWrong || 0) + sessionStats.wrongChecks;
+  student.totalCorrect = (student.totalCorrect || 0) + sessionStats.correctChecks;
+  student.monthlyMarks = student.monthlyMarks || {};
+  student.monthlyMarks[currentMonth] = (student.monthlyMarks[currentMonth] || 0) + sessionStats.mark;
+
+  const earned = new Set(student.earnedBadges || []);
+  if (student.games >= 1) { earned.add('first_finish'); earned.add('complete1'); }
+  if (student.games >= 2) earned.add('complete2');
+  if (student.games >= 5) earned.add('complete5');
+  if (student.games >= 10) earned.add('complete10');
+  if (sessionStats.wrongChecks === 0) earned.add('no_wrong');
+  if (sessionStats.stationWrong.every(Boolean)) earned.add('all_wrong');
+  if (sessionStats.maxCorrectStreak >= 3) earned.add('correct3');
+  if (sessionStats.maxCorrectStreak >= 5) earned.add('correct5');
+  if (sessionStats.maxWrongStreak >= 3) earned.add('wrong3');
+  if (sessionStats.maxWrongStreak >= 5) earned.add('wrong5');
+
+  student.earnedBadges = [...earned];
+  data.students[key] = student;
+  saveHallData(data);
+  cloudSubmitCurrentResult();
+}
+
+function renderHall(preferredKey = null) {
+  const data = loadHallData();
+  const students = getSortedStudents(data);
+  const empty = document.getElementById('hallEmpty');
+  const content = document.getElementById('hallContent');
+
+  if (!students.length) {
+    empty.style.display = 'block';
+    content.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  content.style.display = 'block';
+
+  const podium = document.getElementById('hallPodium');
+  podium.innerHTML = '';
+  students.slice(0,3).forEach((s,i) => {
+    const rank = i+1;
+    const card = document.createElement('div');
+    card.className = `podium-card rank${rank}`;
+    card.innerHTML = `
+      <img class="podium-badge" src="${BADGE_IMAGES['mvp'+rank]}" alt="MVP ${rank}">
+      <div class="podium-name">${escapeHall(s.name)}</div>
+      <div class="podium-score">${s.totalMarks || 0} markah • ${s.games || 0} permainan</div>`;
+    podium.appendChild(card);
+  });
+
+  const body = document.getElementById('rankingBody');
+  body.innerHTML = '';
+  students.forEach((s,i) => {
+    const rank=i+1;
+    const rankBadge=currentRankBadge(rank);
+    const tr=document.createElement('tr');
+    tr.className='ranking-row';
+    tr.dataset.key=s.key;
+    tr.innerHTML=`
+      <td><b>${rank}</b></td>
+      <td>${escapeHall(s.name)}</td>
+      <td><b>${s.totalMarks || 0}</b></td>
+      <td>${s.bestMark || 0}/100</td>
+      <td>${s.games || 0}</td>
+      <td><img class="rank-mini-badge" src="${BADGE_IMAGES[rankBadge]}" alt="${rankBadge}"></td>`;
+    tr.onclick=()=>showStudentBadges(s.key);
+    body.appendChild(tr);
+  });
+
+  const selectKey =
+    preferredKey ||
+    (player && player !== 'Pemain' ? hallKey(player) : null) ||
+    students[0].key;
+  showStudentBadges(data.students[selectKey] ? selectKey : students[0].key);
+}
+
+function escapeHall(text) {
+  return String(text).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+}
+
+function showStudentBadges(key) {
+  const data=loadHallData();
+  const students=getSortedStudents(data);
+  const student=data.students[key];
+  if(!student) return;
+  const rank=students.findIndex(s=>s.key===key)+1;
+  const badges=dynamicBadgesForStudent(data,student,rank);
+  const top3Months=monthlyTop3MonthsForStudent(data,key);
+
+  document.querySelectorAll('.ranking-row').forEach(row =>
+    row.classList.toggle('active', row.dataset.key===key)
+  );
+
+  document.getElementById('badgeStudentName').textContent='— '+student.name;
+  document.getElementById('badgeSummary').innerHTML =
+    `<span class="score-pop">⭐ ${student.totalMarks || 0} jumlah markah</span> `+
+    `Terbaik: <b>${student.bestMark || 0}/100</b> • Main: <b>${student.games || 0}x</b> • `+
+    `Top 3 bulanan: <b>${top3Months}</b>`;
+
+  const grid=document.getElementById('badgeGrid');
+  grid.innerHTML='';
+  BADGE_META.forEach(meta=>{
+    const earned=badges.has(meta.id);
+    const item=document.createElement('div');
+    item.className='badge-item '+(earned?'earned':'locked');
+    item.title=meta.desc;
+    item.innerHTML=`
+      <img src="${BADGE_IMAGES[meta.id]}" alt="${escapeHall(meta.name)}">
+      <div class="badge-name">${escapeHall(meta.name)}</div>
+      ${earned?'':'<div class="badge-lock">🔒</div>'}`;
+    grid.appendChild(item);
+  });
+}
+
+async function openHall(preferredKey=null) {
+  renderHall(preferredKey);
+  const modal=document.getElementById('hallModal');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+
+  if (cloudConfigured()) {
+    const shared = await cloudRefreshHall();
+    if (shared) renderHall(preferredKey);
+  }
+}
+
+
+const nameBox = document.getElementById('nameBox');
+const startBtn = document.getElementById('startBtn');
+const nameInput = document.getElementById('playerName');
+
+document.querySelectorAll('.hero').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.hero').forEach(x => x.classList.remove('selected'));
+    card.classList.add('selected');
+    hero = card.dataset.hero;
+    nameBox.style.display = 'block';
+    startBtn.style.display = 'block';
+    nameBox.classList.add('revealed');
+    startBtn.classList.add('revealed');
+    requestAnimationFrame(() => {
+      nameBox.scrollIntoView({behavior:'smooth', block:'nearest'});
+      setTimeout(() => nameInput.focus(), 150);
+    });
+  });
+});
+
+startBtn.addEventListener('click', () => {
+  if (!hero) return;
+  const entered = nameInput.value.trim();
+  if (!entered) {
+    nameInput.focus();
+    nameInput.style.borderColor = '#f87171';
+    nameInput.placeholder = 'Sila masukkan nama dahulu';
+    return;
+  }
+  nameInput.style.borderColor = '#64748b';
+  player = entered;
+  exp = 0;
+  sessionStats = createSessionStats();
+  sessionSaved = false;
+
+  sessionStorage.setItem('trainBuilderPlayerName', player);
+  sessionStorage.setItem('trainBuilderHero', hero);
+
+  document.getElementById('start').classList.remove('active');
+  showQuestionSelection();
+});
+
+nameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') startBtn.click();
+});
+
+function updateHud() {
+  document.getElementById('hudPlayer').innerHTML =
+    `<span style="display:inline-flex;align-items:center;gap:8px">
+      <img src="${heroImages[hero]}" alt="" style="width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 2px 2px #0006)">
+      <span>${player}</span>
+    </span>`;
+  document.getElementById('expText').textContent = exp;
+  document.getElementById('expBar').style.width = Math.min(100, exp) + '%';
+
+  const journeyTrain = document.getElementById('journeyTrain');
+  const journeyStage = document.getElementById('journeyStage');
+  if (journeyTrain) journeyTrain.style.left = (1.5 + Math.min(stage, 5) * 7.3) + '%';
+  if (journeyStage) journeyStage.textContent = (Math.min(stage + 1, 6)) + ' / 6';
+
+  const map = document.getElementById('map');
+  map.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    if (i > 0) {
+      const rail = document.createElement('div');
+      rail.className = 'railmini';
+      map.appendChild(rail);
+    }
+    const n = document.createElement('div');
+    n.className = 'node ' + (i < stage ? 'done' : i === stage ? 'now' : '');
+    n.textContent = i < 5 ? (i + 1) : '🏁';
+    map.appendChild(n);
+  }
+}
+
+function showFeedback(msg, type='good', imageType=null) {
+  const textEl = document.querySelector('.feedback');
+  const artEl = document.querySelector('.answer-art');
+  if (textEl) textEl.innerHTML = `<span class="${type}">${msg}</span>`;
+  if (artEl) {
+    if (imageType) {
+      artEl.src = feedbackImages[imageType];
+      artEl.style.display = 'block';
+    } else {
+      artEl.style.display = 'none';
+      artEl.removeAttribute('src');
+    }
+  }
+}
+
+function damage() {
+  // HP/lives mode removed. Pupils may retry without losing lives.
+}
+
+
+function nextStage() {
+  if (locked) return;
+  locked = true;
+  setTimeout(() => {
+    stage++;
+    locked = false;
+    if (stage >= 6) finishGame();
+    else render();
+  }, 1000);
+}
+
+function finishGame() {
+  clearSavedProgress(getCurrentSetId());
+  recordGameCompletion();
+  const endingImg = document.getElementById('endingHeroImage');
+  if (endingImg) endingImg.src = ENDING_IMAGES[hero] || ENDING_IMAGES.boy;
+  document.getElementById('game').classList.remove('active');
+  document.getElementById('result').classList.add('active');
+  document.getElementById('finalExp').textContent = exp;
+  const stars = exp >= 90 ? 3 : exp >= 70 ? 2 : 1;
+  document.getElementById('finalStars').textContent = '⭐'.repeat(stars);
+}
+
+function baseQuest(title, type, instruction) {
+  const q = document.getElementById('quest');
+  q.innerHTML = `
+    <div class="station-title">${title}</div>
+    <div class="quest-type">${type}</div>
+    <div class="instruction">${instruction}</div>
+    <div class="feedback"></div>
+    <img class="answer-art" alt="Maklum balas jawapan">
+  `;
+  return q;
+}
+
+
+function renderChoiceStation(idx) {
+  const data = stationData[idx];
+  const q = baseQuest(data.title, data.type, data.instruction);
+
+  const sentence = document.createElement('div');
+  sentence.className = 'inline-sentence';
+  sentence.innerHTML = data.template;
+  q.insertBefore(sentence, q.querySelector('.feedback'));
+
+  const blanks = [...sentence.querySelectorAll('.inline-blank')];
+  const selected = new Array(data.answers.length).fill(null);
+
+  const choices = document.createElement('div');
+  choices.className = 'choices';
+
+  function refreshSlots() {
+    blanks.forEach((slot, i) => {
+      const value = selected[i];
+      if (value) {
+        slot.textContent = value;
+        slot.classList.remove('empty');
+        slot.classList.add('filled');
+      } else {
+        slot.textContent = '';
+        slot.classList.add('empty');
+        slot.classList.remove('filled');
+      }
+      slot.style.borderColor = '';
+      slot.style.background = '';
+    });
+  }
+
+  function clearAll() {
+    selected.fill(null);
+    [...choices.children].forEach(b => b.classList.remove('used', 'correct', 'wrong'));
+    refreshSlots();
+  }
+
+  blanks.forEach((slot, slotIndex) => {
+    slot.addEventListener('click', () => {
+      const value = selected[slotIndex];
+      if (!value) return;
+      selected[slotIndex] = null;
+      const optionButton = [...choices.querySelectorAll('.choice')]
+        .find(b => b.dataset.value === value && b.classList.contains('used'));
+      if (optionButton) optionButton.classList.remove('used');
+      refreshSlots();
+      nextBtn.disabled = true;
+      nextBtn.style.opacity = '.45';
+      showFeedback('Jawapan dikeluarkan. Anda boleh menukar pilihan.', 'good', null);
+    });
+  });
+
+  data.options.forEach(opt => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'choice';
+    b.textContent = opt;
+    b.dataset.value = opt;
+    b.addEventListener('click', () => {
+      if (locked || b.classList.contains('used')) return;
+      const nextEmpty = selected.findIndex(v => v === null);
+      if (nextEmpty === -1) {
+        showFeedback('Semua ruang telah diisi. Klik ruang kosong untuk menukar jawapan.', 'bad', null);
+        return;
+      }
+      selected[nextEmpty] = opt;
+      b.classList.add('used');
+      refreshSlots();
+      nextBtn.disabled = true;
+      nextBtn.style.opacity = '.45';
+      showFeedback('', 'good', null);
+    });
+    choices.appendChild(b);
+  });
+  q.insertBefore(choices, q.querySelector('.feedback'));
+
+  const actions = document.createElement('div');
+  actions.className = 'check-row';
+  actions.innerHTML = `
+    <button class="action attack">✅ Semak Jawapan / 检查</button>
+    <button class="action hint">↺ Kosongkan / 清空</button>
+    <button class="action next-btn" disabled style="opacity:.45">➡️ Seterusnya / 下一题</button>
+  `;
+  q.appendChild(actions);
+
+  const checkBtn = actions.querySelector('.attack');
+  const resetBtn = actions.querySelector('.hint');
+  const nextBtn = actions.querySelector('.next-btn');
+
+  resetBtn.addEventListener('click', () => {
+    clearAll();
+    nextBtn.disabled = true;
+    nextBtn.style.opacity = '.45';
+    showFeedback('Semua ruang telah dikosongkan.', 'good', null);
+  });
+
+  checkBtn.addEventListener('click', () => {
+    if (selected.some(v => v === null)) {
+      showFeedback('Isi semua ruang kosong dahulu.', 'bad', 'wrong');
+      return;
+    }
+
+    const isCorrect = selected.every((value, i) => value === data.answers[i]);
+    if (isCorrect) {
+      if (!checkBtn.dataset.done) {
+        recordAttempt(true, idx);
+        awardStationMark(idx);
+        checkBtn.dataset.done = '1';
+      }
+      blanks.forEach(slot => {
+        slot.style.borderColor = '#4ade80';
+        slot.style.background = '#14532d';
+      });
+      [...choices.children].forEach(b => {
+        if (b.classList.contains('used')) b.classList.add('correct');
+      });
+      showFeedback('✅ Betul! Sila baca semula ayat ini dahulu, kemudian tekan "Seterusnya".<br><span class="cn-help">答对了！先读一遍完整句子，再按“下一题”。</span>', 'good', 'correct');
+      nextBtn.disabled = false;
+      nextBtn.style.opacity = '1';
+    } else {
+      recordAttempt(false, idx);
+      blanks.forEach((slot, i) => {
+        slot.style.borderColor = (selected[i] === data.answers[i]) ? '#4ade80' : '#f87171';
+      });
+      showFeedback('❌ Ada jawapan yang belum tepat. Baca ayat dan cuba lagi.<br><span class="cn-help">有答案不正确。请再读句子并重试。</span>', 'bad', 'wrong');
+    }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    if (nextBtn.disabled) return;
+    nextStage();
+  });
+
+  refreshSlots();
+}
+
+
+function renderFinalSequenceStation() {
+  const q = baseQuest(
+    '🏁 Stesen Akhir — Susun Cerita',
+    'Susun lima ayat mengikut urutan yang betul',
+    "Pilih nombor 1 hingga 5 bagi setiap ayat supaya cerita tersusun dengan betul.<br><span class='cn-help'>为每个句子选择 1 到 5 的号码，把故事排成正确顺序。</span>"
+  );
+
+  const intro = document.createElement('div');
+  intro.className = 'sentence';
+  intro.style.fontSize = '19px';
+  intro.innerHTML = 'Tugasan akhir: baca semua ayat di bawah dan tentukan urutan cerita yang betul.';
+  q.insertBefore(intro, q.querySelector('.feedback'));
+
+  const box = document.createElement('div');
+  box.className = 'order-box';
+
+  finalDisplayOrder.forEach((sentenceIndex) => {
+    const row = document.createElement('div');
+    row.className = 'order-row';
+    row.innerHTML = `
+      <div>
+        <div class="label" style="margin-bottom:6px">Nombor</div>
+        <select>
+          <option value="">-</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+      </div>
+      <div class="order-sentence">${fullSentences[sentenceIndex]}</div>
+    `;
+    row.dataset.correctOrder = String(sentenceIndex + 1);
+    box.appendChild(row);
+  });
+  q.insertBefore(box, q.querySelector('.feedback'));
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  actions.innerHTML = `<button class="action attack">✅ Semak Urutan / 检查顺序</button>`
+                       + `<button class="action hint">💡 Petunjuk / 提示</button>`
+                       + `<button class="action next-btn" disabled style="opacity:.45">🏆 Lihat Keputusan / 查看成绩</button>`;
+  q.appendChild(actions);
+
+  const finalNextBtn = actions.querySelector('.next-btn');
+
+  actions.querySelector('.hint').onclick = () => {
+    showFeedback('Petunjuk: mula dengan ayat pengenalan, kemudian aktiviti ayah, abang, ibu, dan akhir sekali perasaan saya.', 'good', null);
+  };
+
+  finalNextBtn.onclick = () => {
+    if (finalNextBtn.disabled) return;
+    nextStage();
+  };
+
+  actions.querySelector('.attack').onclick = () => {
+    const rows = [...box.querySelectorAll('.order-row')];
+    const values = rows.map(r => r.querySelector('select').value);
+
+    if (values.some(v => !v)) {
+      showFeedback('Sila letakkan nombor bagi semua ayat dahulu.', 'bad', 'wrong');
+      return;
+    }
+
+    const unique = new Set(values);
+    if (unique.size !== 5) {
+      showFeedback('Setiap nombor hanya boleh digunakan sekali.', 'bad', 'wrong');
+      return;
+    }
+
+    const correct = rows.every(r => r.querySelector('select').value === r.dataset.correctOrder);
+
+    if (correct) {
+      if (!actions.querySelector('.attack').dataset.done) {
+        recordAttempt(true, 5);
+        awardStationMark(5);
+        actions.querySelector('.attack').dataset.done = '1';
+      }
+      showFeedback('🎉 Tahniah! Susunan cerita betul. Baca semula dahulu, kemudian tekan "Lihat Keputusan".', 'good', 'correct');
+      finalNextBtn.disabled = false;
+      finalNextBtn.style.opacity = '1';
+    } else {
+      recordAttempt(false, 5);
+      damage();
+      showFeedback('❌ Urutan masih belum betul. Cuba fikir perjalanan cerita dari awal hingga akhir.', 'bad', 'wrong');
+    }
+  };
+}
+
+function render() {
+  updateHud();
+  if (stage <= 4) renderChoiceStation(stage);
+  else renderFinalSequenceStation();
+}
+
+
+
+// ===== Teacher mode / reusable lesson sets =====
+const BLANK_COUNTS = [2,3,3,4,4];
+
+const DEFAULT_SET = {
+  id: 'default-gotong-royong',
+  name: 'Gotong-royong',
+  sentences: [
+    'Pada cuti persekolahan yang lalu, kami sekeluarga telah bergotong-royong membersihkan rumah.',
+    'Ayah menyapu daun kering di halaman rumah dengan sebatang penyapu lidi.',
+    'Abang menyusun buku-buku lama di atas rak kayu dengan teratur supaya kelihatan kemas.',
+    'Ibu menghidangkan minuman petang yang enak di atas meja makan untuk kami sekeluarga.',
+    'Saya berasa gembira dapat membantu ibu bapa.'
+  ],
+  blanks: [
+    ['persekolahan','bergotong-royong'],
+    ['Ayah','halaman','lidi'],
+    ['Abang','rak','kemas'],
+    ['Ibu','minuman','meja','sekeluarga'],
+    ['Saya','gembira','membantu','bapa']
+  ],
+  image: null
+};
+
+function loadSetLibrary(){
+  try{
+    const raw = JSON.parse(localStorage.getItem('trainBuilderSetLibrary') || '[]');
+    return Array.isArray(raw) ? raw : [];
+  }catch(e){
+    return [];
+  }
+}
+function saveSetLibrary(){
+  localStorage.setItem('trainBuilderSetLibrary', JSON.stringify(setLibrary));
+}
+let setLibrary = loadSetLibrary();
+
+function makeId(){
+  return 'set-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+}
+
+let activeSet = null;
+try{
+  activeSet = JSON.parse(localStorage.getItem('trainBuilderTeacherSet') || 'null');
+}catch(e){}
+if(!activeSet) activeSet = DEFAULT_SET;
+
+function sanitizeWord(token){
+  return token.replace(/^[^\p{L}\p{N}-]+|[^\p{L}\p{N}-]+$/gu,'');
+}
+
+function sentenceWords(sentence){
+  return sentence.split(/\s+/)
+    .map((token, index)=>({token, word:sanitizeWord(token), index}))
+    .filter(x=>x.word);
+}
+
+function buildTemplateFromSelectedWords(sentence, selectedWords){
+  const selectedCounts = {};
+  selectedWords.forEach(w=>{
+    selectedCounts[w] = (selectedCounts[w] || 0) + 1;
+  });
+
+  const tokens = sentence.split(/(\s+)/);
+  let slotIndex = 0;
+
+  return tokens.map(token=>{
+    if(/^\s+$/.test(token)) return token;
+
+    const word = sanitizeWord(token);
+    const lead = (token.match(/^[^\p{L}\p{N}-]*/u) || [''])[0];
+    const trail = (token.match(/[^\p{L}\p{N}-]*$/u) || [''])[0];
+
+    if(word && selectedCounts[word] > 0){
+      selectedCounts[word]--;
+      const html = lead +
+        `<span class='inline-blank answer-slot empty' data-slot='${slotIndex}' title='Klik untuk buang jawapan'></span>` +
+        trail;
+      slotIndex++;
+      return html;
+    }
+    return token;
+  }).join('');
+}
+
+function findDistractorWord(sentences, currentIndex, answers){
+  const used = new Set(answers.map(x=>x.toLowerCase()));
+  const stop = new Set(['yang','telah','dengan','untuk','pada','dalam','di','ke','dan','atau','itu','ini']);
+
+  for(let offset=1; offset<sentences.length; offset++){
+    const words = sentenceWords(sentences[(currentIndex + offset) % sentences.length]);
+    const candidate = words.find(x =>
+      x.word.length > 2 &&
+      !used.has(x.word.toLowerCase()) &&
+      !stop.has(x.word.toLowerCase())
+    );
+    if(candidate) return candidate.word;
+  }
+  return 'pilihan';
+}
+
+function shuffleOptions(arr, seed){
+  const out = [...arr];
+  for(let i=out.length-1;i>0;i--){
+    const j = (seed + i * 3) % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function buildStationDataFromSet(set){
+  return set.sentences.map((sentence, idx)=>{
+    let blanks = Array.isArray(set.blanks?.[idx]) ? [...set.blanks[idx]] : [];
+    blanks = blanks.slice(0, BLANK_COUNTS[idx]);
+
+    // Fallback if an old set has no manual blank selection
+    if(blanks.length !== BLANK_COUNTS[idx]){
+      const candidates = sentenceWords(sentence)
+        .map(x=>x.word)
+        .filter(w=>w.length > 2);
+      blanks = candidates.slice(0, BLANK_COUNTS[idx]);
+    }
+
+    const template = buildTemplateFromSelectedWords(sentence, blanks);
+    const distractor = findDistractorWord(set.sentences, idx, blanks);
+    const options = shuffleOptions([...blanks, distractor], idx + 3);
+
+    return {
+      title: `🚉 Stesen ${idx+1} — Bina Ayat`,
+      type: `${BLANK_COUNTS[idx]} RUANG KOSONG • ${BLANK_COUNTS[idx]+1} PILIHAN`,
+      instruction:
+        'Klik perkataan yang betul untuk melengkapkan ayat.' +
+        '<span class="cn-help">点击正确的词语完成句子。</span>',
+      template,
+      answers: blanks,
+      options
+    };
+  });
+}
+
+function applyTeacherSet(set){
+  if(!set || !Array.isArray(set.sentences) || set.sentences.length !== 5) return;
+
+  const generated = buildStationDataFromSet(set);
+  stationData.splice(0, stationData.length, ...generated);
+  fullSentences.splice(0, fullSentences.length, ...set.sentences);
+
+  if(set.image){
+    const img = document.getElementById('stimulusImage');
+    if(img) img.src = set.image;
+  }
+}
+
+applyTeacherSet(activeSet);
+
+const teacherModal = document.getElementById('teacherModal');
+const teacherOpen = document.getElementById('teacherOpen');
+const teacherOpenStart = document.getElementById('teacherOpenStart');
+const teacherClose = document.getElementById('teacherClose');
+const teacherUnlock = document.getElementById('teacherUnlock');
+const teacherPin = document.getElementById('teacherPin');
+const teacherLock = document.getElementById('teacherLock');
+const teacherEditor = document.getElementById('teacherEditor');
+const teacherStatus = document.getElementById('teacherStatus');
+
+const teacherSetSelect = document.getElementById('teacherSetSelect');
+const teacherLoadSet = document.getElementById('teacherLoadSet');
+const teacherNewSet = document.getElementById('teacherNewSet');
+const teacherDeleteSet = document.getElementById('teacherDeleteSet');
+
+const teacherSelectedBlanks = [[],[],[],[],[]];
+
+async function openTeacher(){
+  if (cloudConfigured()) await cloudRefreshSets();
+  teacherModal.classList.add('open');
+  teacherModal.setAttribute('aria-hidden','false');
+  refreshSetSelect();
+  setTimeout(()=>teacherPin.focus(),50);
+}
+teacherOpen?.addEventListener('click', openTeacher);
+teacherOpenStart?.addEventListener('click', openTeacher);
+
+teacherClose?.addEventListener('click', ()=>{
+  teacherModal.classList.remove('open');
+  teacherModal.setAttribute('aria-hidden','true');
+});
+
+teacherModal?.addEventListener('click', e=>{
+  if(e.target === teacherModal) teacherClose.click();
+});
+
+function refreshSetSelect(selectedId=''){
+  teacherSetSelect.innerHTML = '<option value="">— Pilih set —</option>';
+
+  const def = document.createElement('option');
+  def.value = DEFAULT_SET.id;
+  def.textContent = '★ ' + DEFAULT_SET.name + ' (asal)';
+  teacherSetSelect.appendChild(def);
+
+  setLibrary.forEach(set=>{
+    const opt = document.createElement('option');
+    opt.value = set.id;
+    opt.textContent = set.name;
+    teacherSetSelect.appendChild(opt);
+  });
+
+  if(selectedId) teacherSetSelect.value = selectedId;
+}
+
+function getSetById(id){
+  if(id === DEFAULT_SET.id) return DEFAULT_SET;
+  return setLibrary.find(x=>x.id === id) || null;
+}
+
+function resetTokenPools(){
+  for(let i=1;i<=5;i++){
+    document.getElementById('tokenPool'+i).innerHTML = '';
+  }
+}
+
+function fillTeacherEditor(set){
+  document.getElementById('teacherSetName').value = set.name || '';
+  set.sentences.forEach((s,i)=>{
+    document.getElementById('teacherS'+(i+1)).value = s;
+    teacherSelectedBlanks[i] = Array.isArray(set.blanks?.[i]) ? [...set.blanks[i]] : [];
+  });
+  resetTokenPools();
+  for(let i=1;i<=5;i++) generateTokenPool(i);
+}
+
+teacherUnlock?.addEventListener('click', ()=>{
+  if(teacherPin.value === '1234'){
+    teacherLock.style.display='none';
+    teacherEditor.style.display='block';
+    refreshSetSelect(activeSet?.id || '');
+    fillTeacherEditor(activeSet || DEFAULT_SET);
+    teacherStatus.textContent='';
+  }else{
+    teacherPin.value='';
+    teacherPin.placeholder='PIN salah';
+  }
+});
+
+teacherPin?.addEventListener('keydown',e=>{
+  if(e.key==='Enter') teacherUnlock.click();
+});
+
+function generateTokenPool(rowNum){
+  const idx = rowNum - 1;
+  const textarea = document.getElementById('teacherS'+rowNum);
+  const pool = document.getElementById('tokenPool'+rowNum);
+  const words = sentenceWords(textarea.value);
+  pool.innerHTML = '';
+
+  if(!words.length){
+    pool.innerHTML = '<span class="teacher-muted tiny">Taip ayat dahulu.</span>';
+    return;
+  }
+
+  words.forEach((item, wordIndex)=>{
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'word-token';
+    btn.textContent = item.word;
+    btn.dataset.word = item.word;
+    btn.dataset.wordIndex = String(wordIndex);
+
+    const alreadyCount = teacherSelectedBlanks[idx]
+      .filter(w=>w === item.word).length;
+
+    const sameWordBefore = words.slice(0, wordIndex)
+      .filter(x=>x.word === item.word).length;
+
+    if(sameWordBefore < alreadyCount){
+      btn.classList.add('selected');
+    }
+
+    btn.addEventListener('click', ()=>{
+      const max = BLANK_COUNTS[idx];
+      const isSelected = btn.classList.contains('selected');
+
+      if(isSelected){
+        btn.classList.remove('selected');
+        const pos = teacherSelectedBlanks[idx].indexOf(item.word);
+        if(pos !== -1) teacherSelectedBlanks[idx].splice(pos,1);
+      }else{
+        if(teacherSelectedBlanks[idx].length >= max){
+          teacherStatus.textContent = `Ayat ${rowNum}: maksimum ${max} perkataan boleh dipilih.`;
+          return;
+        }
+        btn.classList.add('selected');
+        teacherSelectedBlanks[idx].push(item.word);
+      }
+
+      teacherStatus.textContent =
+        `Ayat ${rowNum}: ${teacherSelectedBlanks[idx].length}/${max} perkataan dipilih.`;
+    });
+
+    pool.appendChild(btn);
+  });
+}
+
+document.querySelectorAll('.token-generate').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const row = Number(btn.dataset.row);
+    teacherSelectedBlanks[row-1] = [];
+    generateTokenPool(row);
+    teacherStatus.textContent = `Pilih ${BLANK_COUNTS[row-1]} perkataan untuk Ayat ${row}.`;
+  });
+});
+
+teacherLoadSet?.addEventListener('click', ()=>{
+  const set = getSetById(teacherSetSelect.value);
+  if(!set){
+    teacherStatus.textContent='Pilih set terlebih dahulu.';
+    return;
+  }
+  fillTeacherEditor(set);
+  teacherStatus.textContent='Set dimuatkan ke editor.';
+});
+
+teacherNewSet?.addEventListener('click', ()=>{
+  document.getElementById('teacherSetName').value = '';
+  for(let i=1;i<=5;i++){
+    document.getElementById('teacherS'+i).value = '';
+    document.getElementById('tokenPool'+i).innerHTML = '';
+    teacherSelectedBlanks[i-1] = [];
+  }
+  teacherSetSelect.value = '';
+  teacherStatus.textContent='Editor dikosongkan untuk set baharu.';
+});
+
+teacherDeleteSet?.addEventListener('click', async ()=>{
+  const id = teacherSetSelect.value;
+  if(!id || id === DEFAULT_SET.id){
+    teacherStatus.textContent='Set asal tidak boleh dipadam.';
+    return;
+  }
+  const target = setLibrary.find(x=>x.id===id);
+  if(!target){
+    teacherStatus.textContent='Set tidak ditemui.';
+    return;
+  }
+  if(!confirm(`Padam set "${target.name}"?`)) return;
+
+  setLibrary = setLibrary.filter(x=>x.id !== id);
+  saveSetLibrary();
+  if (cloudConfigured()) await cloudDeleteSet(id);
+  refreshSetSelect();
+  teacherStatus.textContent='Set telah dipadam.';
+});
+
+function compressImage(file, maxW=1200, maxH=900, quality=.84){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let w=img.width, h=img.height;
+        const scale=Math.min(1,maxW/w,maxH/h);
+        w=Math.round(w*scale); h=Math.round(h*scale);
+        const c=document.createElement('canvas');
+        c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(c.toDataURL('image/jpeg',quality));
+      };
+      img.onerror=reject;
+      img.src=reader.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('teacherApply')?.addEventListener('click', async ()=>{
+  const sentences=[1,2,3,4,5].map(i=>document.getElementById('teacherS'+i).value.trim());
+
+  if(sentences.some(s=>!s)){
+    teacherStatus.textContent='Sila isi semua 5 ayat.';
+    return;
+  }
+
+  for(let i=0;i<5;i++){
+    if(teacherSelectedBlanks[i].length !== BLANK_COUNTS[i]){
+      teacherStatus.textContent =
+        `Ayat ${i+1}: pilih tepat ${BLANK_COUNTS[i]} perkataan untuk ruang kosong.`;
+      return;
+    }
+  }
+
+  teacherStatus.textContent='Menyimpan set...';
+
+  let imageData = activeSet?.image || null;
+  const file=document.getElementById('teacherImage').files[0];
+  if(file){
+    try{
+      imageData=await compressImage(file);
+    }catch(e){
+      teacherStatus.textContent='Gambar tidak dapat diproses.';
+      return;
+    }
+  }
+
+  const chosenId = teacherSetSelect.value;
+  const existing = getSetById(chosenId);
+  const isDefault = chosenId === DEFAULT_SET.id;
+
+  const set = {
+    id: (!chosenId || isDefault) ? makeId() : chosenId,
+    name: document.getElementById('teacherSetName').value.trim() || 'Set baharu',
+    sentences,
+    blanks: teacherSelectedBlanks.map(x=>[...x]),
+    image: imageData
+  };
+
+  const found = setLibrary.findIndex(x=>x.id===set.id);
+  if(found >= 0) setLibrary[found] = set;
+  else setLibrary.push(set);
+
+  try{
+    saveSetLibrary();
+    localStorage.setItem('trainBuilderTeacherSet',JSON.stringify(set));
+  }catch(e){
+    teacherStatus.textContent='Set terlalu besar untuk disimpan. Cuba gunakan gambar yang lebih kecil.';
+    return;
+  }
+
+  if (cloudConfigured()) {
+    const savedCloud = await cloudSaveSet(set);
+    if (savedCloud?.set) {
+      Object.assign(set, savedCloud.set);
+      const pos = setLibrary.findIndex(x=>x.id===set.id);
+      if (pos >= 0) setLibrary[pos] = set;
+      try{ saveSetLibrary(); }catch(e){}
+    }
+  }
+
+  activeSet=set;
+  applyTeacherSet(set);
+  stage=0;
+  exp=0;
+  sessionStats=createSessionStats();
+  sessionSaved=false;
+  locked=false;
+
+  if(document.getElementById('game').classList.contains('active')) render();
+
+  refreshSetSelect(set.id);
+  teacherStatus.textContent='✓ Set telah disimpan dan digunakan.';
+  renderQuestionSets();
+  setTimeout(()=>teacherClose.click(),700);
+});
+
+document.getElementById('teacherReset')?.addEventListener('click', ()=>{
+  localStorage.removeItem('trainBuilderTeacherSet');
+  activeSet=DEFAULT_SET;
+  applyTeacherSet(DEFAULT_SET);
+  stage=0;
+  exp=0;
+  sessionStats=createSessionStats();
+  sessionSaved=false;
+  locked=false;
+  refreshSetSelect(DEFAULT_SET.id);
+  fillTeacherEditor(DEFAULT_SET);
+  if(document.getElementById('game').classList.contains('active')) render();
+  teacherStatus.textContent='Set asal telah dipulihkan.';
+});
+
+
+
+
+
+// =============================================================
+// GOOGLE CLOUD SYNC
+// Replace this once with the Apps Script Web App /exec URL.
+// =============================================================
+const GOOGLE_CLOUD_URL = 'https://script.google.com/macros/s/AKfycbyMPPST6tIxiU-djr80a08c6veZAWwz_pJxq_ev7evtPifQKakEgpP1ZZQTvhO9ZeSWAw/exec';
+const GOOGLE_SYNC_KEY = 'EKM-BIdlbYaaNVxY6D6WMxDSxTq3NKMN3_8S';
+
+let cloudHallCache = null;
+let cloudProgressCache = {};
+let cloudSetsLoaded = false;
+
+function cloudConfigured(){
+  return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/.test(GOOGLE_CLOUD_URL);
+}
+
+function cloudStudentKey(){
+  return hallKey(player || '');
+}
+
+function cloudRequestId(){
+  return 'req-' + Date.now() + '-' + Math.random().toString(36).slice(2,10);
+}
+
+function cloudJsonp(action, params = {}, timeoutMs = 12000){
+  if(!cloudConfigured()) return Promise.resolve(null);
+
+  return new Promise((resolve, reject)=>{
+    const cb = '__ekmCloudCb_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+    const script = document.createElement('script');
+    const timer = setTimeout(()=>{
+      cleanup();
+      reject(new Error('Cloud timeout'));
+    }, timeoutMs);
+
+    function cleanup(){
+      clearTimeout(timer);
+      try{ delete window[cb]; }catch(e){ window[cb] = undefined; }
+      script.remove();
+    }
+
+    window[cb] = data=>{
+      cleanup();
+      if(data && data.ok === false) reject(new Error(data.error || 'Cloud error'));
+      else resolve(data);
+    };
+
+    const u = new URL(GOOGLE_CLOUD_URL);
+    u.searchParams.set('action', action);
+    u.searchParams.set('callback', cb);
+    u.searchParams.set('syncKey', GOOGLE_SYNC_KEY);
+    Object.entries(params).forEach(([k,v])=>{
+      if(v !== undefined && v !== null) u.searchParams.set(k, String(v));
+    });
+    script.onerror = ()=>{
+      cleanup();
+      reject(new Error('Cloud connection failed'));
+    };
+    script.src = u.toString();
+    document.head.appendChild(script);
+  });
+}
+
+async function cloudPost(action, payload = {}){
+  if(!cloudConfigured()) return null;
+
+  const requestId = cloudRequestId();
+  const body = new URLSearchParams();
+  body.set('action', action);
+  body.set('requestId', requestId);
+  body.set('syncKey', GOOGLE_SYNC_KEY);
+  body.set('payload', JSON.stringify(payload));
+
+  try{
+    const res = await fetch(GOOGLE_CLOUD_URL, {
+      method:'POST',
+      body,
+      redirect:'follow'
+    });
+    if(res.ok){
+      const text = await res.text();
+      try{
+        const data = JSON.parse(text);
+        if(data && data.ok === false) throw new Error(data.error || 'Cloud error');
+        return data;
+      }catch(parseErr){
+        // Some Apps Script deployments may return a readable redirect/body
+        // that browsers handle differently. The write has already been sent.
+        return {ok:true, sent:true};
+      }
+    }
+    throw new Error('HTTP ' + res.status);
+  }catch(err){
+    // CORS-safe fallback. requestId makes retry idempotent on the server.
+    try{
+      await fetch(GOOGLE_CLOUD_URL, {
+        method:'POST',
+        body,
+        mode:'no-cors',
+        redirect:'follow'
+      });
+      return {ok:true, queued:true};
+    }catch(e){
+      console.warn('Cloud write failed:', e);
+      return null;
+    }
+  }
+}
+
+function setCloudStatus(text, ok = null){
+  const el = document.getElementById('cloudStatusText');
+  if(!el) return;
+  el.textContent = text;
+  el.classList.remove('cloud-online','cloud-offline');
+  if(ok === true) el.classList.add('cloud-online');
+  if(ok === false) el.classList.add('cloud-offline');
+}
+
+async function testCloud(){
+  if(!cloudConfigured()){
+    setCloudStatus('Masukkan URL Apps Script ke dalam HTML dahulu.', false);
+    return false;
+  }
+  setCloudStatus('Menguji sambungan...');
+  try{
+    const r = await cloudJsonp('ping');
+    setCloudStatus(r?.ok ? 'Tersambung ke Google Cloud ✓' : 'Sambungan gagal.', !!r?.ok);
+    const publicEl = document.getElementById('publicCloudStatus');
+    if(publicEl && r?.ok) publicEl.textContent = '☁ Cloud tersambung';
+    return !!r?.ok;
+  }catch(e){
+    setCloudStatus('Sambungan gagal: ' + e.message, false);
+    return false;
+  }
+}
+
+document.getElementById('cloudTestBtn')?.addEventListener('click', testCloud);
+
+async function cloudRefreshSets(){
+  if(!cloudConfigured()) return;
+  try{
+    const r = await cloudJsonp('getSets');
+    if(!r?.sets) return;
+
+    const cloudSets = r.sets;
+    const map = new Map((setLibrary || []).map(s=>[s.id,s]));
+    cloudSets.forEach(s=>map.set(s.id,s));
+    setLibrary = [...map.values()];
+    try{ saveSetLibrary(); }catch(e){}
+    cloudSetsLoaded = true;
+    refreshSetSelect?.(activeSet?.id || '');
+  }catch(e){
+    console.warn('Cloud sets:', e);
+  }
+}
+
+async function cloudSaveSet(set){
+  if(!cloudConfigured()) return null;
+  return await cloudPost('saveSet', {
+    pin: document.getElementById('teacherPin')?.value || '',
+    set
+  });
+}
+
+async function cloudDeleteSet(setId){
+  if(!cloudConfigured()) return null;
+  return await cloudPost('deleteSet', {
+    pin: document.getElementById('teacherPin')?.value || '',
+    setId
+  });
+}
+
+async function cloudLoadPlayerProgress(){
+  cloudProgressCache = {};
+  if(!cloudConfigured() || !player || player === 'Pemain') return cloudProgressCache;
+
+  try{
+    const r = await cloudJsonp('getPlayerProgress', {studentKey:cloudStudentKey()});
+    (r?.progress || []).forEach(p=>{
+      cloudProgressCache[p.setId] = p;
+    });
+  }catch(e){
+    console.warn('Cloud progress:', e);
+  }
+  return cloudProgressCache;
+}
+
+async function cloudGetProgress(setId){
+  if(cloudProgressCache[setId]) return cloudProgressCache[setId];
+  if(!cloudConfigured()) return null;
+
+  try{
+    const r = await cloudJsonp('getProgress', {
+      studentKey:cloudStudentKey(),
+      setId
+    });
+    if(r?.progress) cloudProgressCache[setId] = r.progress;
+    return r?.progress || null;
+  }catch(e){
+    console.warn('Cloud progress read:', e);
+    return null;
+  }
+}
+
+async function cloudSaveProgressNow(){
+  if(!cloudConfigured() || !player || player === 'Pemain') return null;
+
+  const p = {
+    studentKey: cloudStudentKey(),
+    setId: getCurrentSetId(),
+    player,
+    hero,
+    stage,
+    mark: exp,
+    sessionStats,
+    savedAt: new Date().toISOString()
+  };
+  cloudProgressCache[p.setId] = {
+    ...p,
+    exp:p.mark
+  };
+  return await cloudPost('saveProgress', p);
+}
+
+async function cloudClearProgress(setId){
+  delete cloudProgressCache[setId];
+  if(!cloudConfigured()) return null;
+  return await cloudPost('clearProgress', {
+    studentKey:cloudStudentKey(),
+    setId
+  });
+}
+
+async function cloudSubmitCurrentResult(){
+  if(!cloudConfigured()) return null;
+
+  const setId = getCurrentSetId();
+  const setName = (typeof activeSet !== 'undefined' && activeSet?.name) || setId;
+  return await cloudPost('submitResult', {
+    resultId:'result-' + cloudStudentKey() + '-' + setId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+    studentKey:cloudStudentKey(),
+    name:player,
+    hero,
+    setId,
+    setName,
+    mark:sessionStats.mark,
+    correctChecks:sessionStats.correctChecks,
+    wrongChecks:sessionStats.wrongChecks,
+    maxCorrectStreak:sessionStats.maxCorrectStreak,
+    maxWrongStreak:sessionStats.maxWrongStreak,
+    allStationsWrong:sessionStats.stationWrong.every(Boolean)
+  });
+}
+
+async function cloudRefreshHall(){
+  if(!cloudConfigured()) return null;
+  try{
+    const r = await cloudJsonp('getHall');
+    if(r?.hall?.students){
+      cloudHallCache = r.hall;
+      return cloudHallCache;
+    }
+  }catch(e){
+    console.warn('Cloud Hall:', e);
+  }
+  return null;
+}
+
+async function cloudResetHall(){
+  if(!cloudConfigured()) return null;
+  return await cloudPost('resetHall', {
+    pin:document.getElementById('teacherPin')?.value || ''
+  });
+}
+
+// Initial background sync.
+setTimeout(()=>{
+  if(cloudConfigured()){
+    testCloud();
+    cloudRefreshSets().then(()=>renderQuestionSets?.());
+  }else{
+    setCloudStatus('Cloud belum dikonfigurasi.', false);
+  }
+}, 700);
+
+
+// ===== Question Set Selection =====
+function getAvailableQuestionSets(){
+  const sets = [];
+
+  // Default/current active set
+  const defaultImage = document.getElementById('stimulusImage')?.src || '';
+  sets.push({
+    id: DEFAULT_SET.id,
+    name: DEFAULT_SET.name,
+    sentences: DEFAULT_SET.sentences,
+    blanks: DEFAULT_SET.blanks,
+    image: DEFAULT_SET.image || defaultImage,
+    isDefault: true
+  });
+
+  // Saved teacher sets
+  const library = loadSetLibrary();
+  library.forEach(set=>{
+    if(!sets.some(s=>s.id===set.id)) sets.push(set);
+  });
+
+  return sets;
+}
+
+function renderQuestionSets(){
+  const grid = document.getElementById('questionSetGrid');
+  if(!grid) return;
+  grid.innerHTML = '';
+
+  const sets = getAvailableQuestionSets();
+  sets.forEach((set, index)=>{
+    const btn = document.createElement('button');
+    btn.className = 'question-set-card';
+    btn.type = 'button';
+
+    const imageSrc = set.image || document.getElementById('stimulusImage')?.src || '';
+
+    btn.innerHTML = `
+      <div class="question-set-thumb">
+        ${imageSrc ? `<img src="${imageSrc}" alt="${escapeHall(set.name || ('Latihan '+(index+1)))}">` : ''}
+      </div>
+      <div class="question-set-body">
+        <div class="question-set-title">${escapeHall(set.name || ('Latihan '+(index+1)))}</div>
+        <div class="question-set-meta">5 ayat • 6 stesen${loadSavedProgress(set.id) ? ' • Ada simpanan' : ''}</div>
+        <span class="question-set-play">${loadSavedProgress(set.id) ? '▶ Sambung' : '▶ Mula'}</span>
+      </div>
+    `;
+
+    btn.addEventListener('click', async ()=>{
+      activeSet = set;
+      try{
+        localStorage.setItem('trainBuilderTeacherSet', JSON.stringify(set));
+      }catch(e){}
+
+      const cloudSaved = cloudConfigured() ? await cloudGetProgress(set.id) : null;
+      const saved = cloudSaved || loadSavedProgress(set.id);
+
+      if(saved){
+        applyProgressState(saved);
+      }else{
+        applyTeacherSet(set);
+        stage = 0;
+        exp = 0;
+        sessionStats = createSessionStats();
+        sessionSaved = false;
+        locked = false;
+      }
+
+      document.getElementById('questionSelect').classList.remove('active');
+      document.getElementById('game').classList.add('active');
+      render();
+    });
+
+    grid.appendChild(btn);
+  });
+}
+
+function updateSelectionPlayer(){
+  const box = document.getElementById('selectPlayer');
+  if(!box) return;
+  const img = heroImages[hero] || heroImages.boy;
+  box.innerHTML = `<img src="${img}" alt=""><span>${escapeHall(player)}</span>`;
+}
+
+async function showQuestionSelection(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('questionSelect').classList.add('active');
+  updateSelectionPlayer();
+
+  if (cloudConfigured()) {
+    await Promise.all([
+      cloudRefreshSets(),
+      cloudLoadPlayerProgress()
+    ]);
+  }
+  renderQuestionSets();
+}
+
+document.getElementById('playAgainBtn')?.addEventListener('click', ()=>{
+  showQuestionSelection();
+});
+
+document.getElementById('hallOpenSelect')?.addEventListener('click', ()=>{
+  openHall(player ? hallKey(player) : null);
+});
+
+// If this page is refreshed after the student already entered a name,
+// keep the same student for the current browser tab and return to question selection.
+(function restorePlayerSession(){
+  const savedName = sessionStorage.getItem('trainBuilderPlayerName');
+  const savedHero = sessionStorage.getItem('trainBuilderHero');
+
+  if(savedName && (savedHero==='boy' || savedHero==='girl')){
+    player = savedName;
+    hero = savedHero;
+  }
+})();
+
+
+
+// ===== Save / Continue Game Progress =====
+function progressKey(playerName, setId){
+  return `trainBuilderProgress::${(playerName||'').trim().toLowerCase()}::${setId||'default'}`;
+}
+
+function getCurrentSetId(){
+  if(typeof activeSet !== 'undefined' && activeSet && activeSet.id) return activeSet.id;
+  if(typeof DEFAULT_SET !== 'undefined' && DEFAULT_SET && DEFAULT_SET.id) return DEFAULT_SET.id;
+  return 'default';
+}
+
+async function saveCurrentProgress(){
+  let localOk = false;
+  try{
+    const key = progressKey(player, getCurrentSetId());
+    const data = {
+      player,
+      hero,
+      stage,
+      exp,
+      locked,
+      sessionStats,
+      activeSet: (typeof activeSet !== 'undefined' && activeSet) ? activeSet : null,
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem(key, JSON.stringify(data));
+    localOk = true;
+  }catch(e){}
+
+  const cloudOk = await cloudSaveProgressNow();
+  return localOk || !!cloudOk;
+}
+
+function loadSavedProgress(setId){
+  if (cloudProgressCache && cloudProgressCache[setId]) return cloudProgressCache[setId];
+  try{
+    const raw = localStorage.getItem(progressKey(player, setId));
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    return null;
+  }
+}
+
+function clearSavedProgress(setId){
+  try{
+    localStorage.removeItem(progressKey(player, setId));
+  }catch(e){}
+  cloudClearProgress(setId);
+}
+
+async function goHomeFromGame(){
+  await saveCurrentProgress();
+  document.getElementById('game').classList.remove('active');
+  await showQuestionSelection();
+}
+
+function goStartHome(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('start').classList.add('active');
+}
+
+function applyProgressState(saved){
+  if(!saved) return false;
+  stage = typeof saved.stage === 'number' ? saved.stage : 0;
+  exp = typeof saved.exp === 'number' ? saved.exp : (typeof saved.mark === 'number' ? saved.mark : 0);
+  locked = !!saved.locked;
+  sessionStats = saved.sessionStats || createSessionStats();
+
+  if(saved.activeSet){
+    activeSet = saved.activeSet;
+    applyTeacherSet(saved.activeSet);
+    try{
+      localStorage.setItem('trainBuilderTeacherSet', JSON.stringify(saved.activeSet));
+    }catch(e){}
+  } else if (activeSet) {
+    applyTeacherSet(activeSet);
+  }
+  return true;
+}
+
+document.getElementById('homeOpen')?.addEventListener('click', goHomeFromGame);
+document.getElementById('homeBackStart')?.addEventListener('click', goStartHome);
+
+// Hall of Fame controls
+const hallModal=document.getElementById('hallModal');
+document.getElementById('hallOpenStart')?.addEventListener('click',()=>openHall());
+document.getElementById('hallOpen')?.addEventListener('click',()=>openHall(player ? hallKey(player) : null));
+document.getElementById('hallOpenResult')?.addEventListener('click',()=>openHall(player ? hallKey(player) : null));
+document.getElementById('hallClose')?.addEventListener('click',()=>{
+  hallModal.classList.remove('open');
+  hallModal.setAttribute('aria-hidden','true');
+});
+hallModal?.addEventListener('click',e=>{
+  if(e.target===hallModal) document.getElementById('hallClose').click();
+});
+
+document.getElementById('teacherResetHall')?.addEventListener('click', async ()=>{
+  if(!confirm('Padam semua markah, ranking dan lencana Hall of Fame?')) return;
+  localStorage.removeItem('trainBuilderHallOfFame');
+  cloudHallCache = null;
+  if (cloudConfigured()) await cloudResetHall();
+  teacherStatus.textContent='Hall of Fame telah dikosongkan.';
+});
+
+
+// Music
+(function(){
+  const bgm = document.getElementById('bgm');
+  const btn = document.getElementById('musicToggle');
+  let musicOn = true;
+  function updateBtn() {
+    btn.textContent = musicOn ? '🎵 Muzik: ON' : '🔇 Muzik: OFF';
+  }
+  async function tryPlay() {
+    if (!musicOn) return;
+    try {
+      await bgm.play();
+    } catch(e) {}
+  }
+  ['click','touchstart','keydown'].forEach(evt => {
+    document.addEventListener(evt, function starter(){
+      tryPlay();
+      document.removeEventListener(evt, starter);
+    }, { once:true });
+  });
+  btn.addEventListener('click', async () => {
+    musicOn = !musicOn;
+    if (musicOn) {
+      try { await bgm.play(); } catch(e) {}
+    } else {
+      bgm.pause();
+    }
+    updateBtn();
+  });
+  tryPlay();
+  updateBtn();
+})();
+</script>
+</body>
+</html>
